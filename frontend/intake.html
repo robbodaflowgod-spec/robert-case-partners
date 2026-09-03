@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confidential Client Intake - Robert Case & Partners</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #b45309;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #cbd5e1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 4rem 2rem; display: flex; justify-content: center; }
+
+        .form-container { background: var(--card); max-width: 600px; width: 100%; padding: 3rem; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        h2 { color: var(--primary); font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700; }
+        .subtitle { color: #64748b; margin-bottom: 2rem; font-size: 0.95rem; }
+
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--primary); }
+        input, textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; color: var(--text); outline: none; transition: border-color 0.2s; }
+        input:focus, textarea:focus { border-color: var(--accent); }
+        textarea { height: 120px; resize: vertical; }
+
+        .submit-btn { background: var(--primary); color: white; border: none; width: 100%; padding: 1rem; border-radius: 4px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 1rem; }
+        .submit-btn:hover { background: #1e293b; }
+
+        .message { margin-top: 1.5rem; padding: 1rem; border-radius: 4px; font-weight: 500; display: none; text-align: center; }
+        .success { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .error { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        
+        .back-link { display: inline-block; margin-bottom: 1.5rem; color: var(--accent); text-decoration: none; font-weight: 500; font-size: 0.9rem; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <a href="index.html" class="back-link">← Return to Home</a>
+        <h2>Confidential Case Evaluation</h2>
+        <p class="subtitle">Please provide your details below. A senior legal analyst will review your submission shortly.</p>
+
+        <form id="intakeForm">
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" required placeholder="John Doe">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" required placeholder="john@example.com">
+            </div>
+
+            <!-- 1. ADDED PHONE NUMBER FORM GROUP -->
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" required placeholder="+254 700 000000">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Brief Case Description</label>
+                <textarea id="description" required placeholder="Please outline the nature of your legal matter..."></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn">Submit Case Request</button>
+        </form>
+
+        <div id="responseMessage" class="message"></div>
+    </div>
+
+    <script>
+        document.getElementById('intakeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const msgDiv = document.getElementById('responseMessage');
+            msgDiv.style.display = "none";
+
+            // 2. EXTRACT VALUES MAPPED TO BACKEND DATA MODIFICATIONS
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone_number: document.getElementById('phone').value, // 👈 Match backend snake_case variable
+                description: document.getElementById('description').value
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/intake', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                // 3. REFACTORED CONDITION TO MATCH YOUR FASTAPI PAYLOAD
+                if (response.ok && result.message === 'Success') { 
+                    msgDiv.className = "message success";
+                    msgDiv.innerText = "Application recorded successfully! Our legal team will reach out.";
+                    msgDiv.style.display = "block";
+                    document.getElementById('intakeForm').reset();
+                } else {
+                    throw new Error("Server rejected request");
+                }
+            } catch (error) {
+                msgDiv.className = "message error";
+                msgDiv.innerText = "Error transmitting data. Ensure your API server is active.";
+                msgDiv.style.display = "block";
+            }
+        });
+    </script>
+</body>
+</html>

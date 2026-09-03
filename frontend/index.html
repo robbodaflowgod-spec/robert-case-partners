@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robert Case & Partners | Premier Legal Counsel</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #b45309;
+            --accent-hover: #92400e;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --bg-light: #f8fafc;
+            --white: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { color: var(--text-dark); background-color: var(--white); line-height: 1.6; }
+
+        /* Navigation */
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 4rem; background: var(--white); border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 1.4rem; font-weight: 700; color: var(--primary); letter-spacing: -0.5px; }
+        .logo span { color: var(--accent); }
+        .nav-links a { text-decoration: none; color: var(--text-light); margin-left: 2rem; font-weight: 500; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--primary); }
+        .nav-cta { background: var(--primary); color: var(--white) !important; padding: 0.5rem 1.2rem; border-radius: 4px; }
+        .nav-cta:hover { background: #1e293b; }
+
+        /* Hero Section */
+        .hero { display: flex; align-items: center; justify-content: space-between; padding: 6rem 4rem; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: var(--white); }
+        .hero-content { max-width: 600px; }
+        .hero-content h1 { font-size: 3.5rem; line-height: 1.1; margin-bottom: 1.5rem; font-weight: 800; }
+        .hero-content p { font-size: 1.2rem; color: #94a3b8; margin-bottom: 2.5rem; }
+        .hero-btn { background: var(--accent); color: var(--white); text-decoration: none; padding: 0.8rem 2rem; font-weight: 600; border-radius: 4px; transition: background 0.2s; display: inline-block; }
+        .hero-btn:hover { background: var(--accent-hover); }
+
+        /* Practice Areas Section */
+        .services { padding: 5rem 4rem; background: var(--bg-light); text-align: center; }
+        .services h2 { font-size: 2.2rem; margin-bottom: 1rem; color: var(--primary); }
+        .services > p { color: var(--text-light); margin-bottom: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; }
+        .card { background: var(--white); padding: 2.5rem 2rem; border-radius: 8px; border: 1px solid #e2e8f0; text-align: left; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .card-icon { color: var(--accent); font-size: 1.5rem; margin-bottom: 1rem; font-weight: bold; }
+        .card h3 { margin-bottom: 0.75rem; color: var(--primary); }
+        .card p { color: var(--text-light); font-size: 0.95rem; }
+
+        /* Footer */
+        footer { background: var(--primary); color: #64748b; text-align: center; padding: 2rem; border-top: 1px solid #1e293b; font-size: 0.9rem; }
+
+        @media (max-width: 900px) {
+            nav { padding: 1.5rem; }
+            .hero { flex-direction: column; text-align: center; padding: 4rem 1.5rem; }
+            .hero-content h1 { font-size: 2.5rem; }
+            .services { padding: 4rem 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">ROBERT <span>CASE</span> & PARTNERS</div>
+        <div class="nav-links">
+            <a href="#about">About</a>
+            <a href="#practices">Practice Areas</a>
+            <a href="intake.html" class="nav-cta">Request Consultation</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Defending Your Rights, Securing Your Future.</h1>
+            <p>Aggressive legal advocacy meeting personalized counsel. We specialize in corporate law, high-stakes litigation, and comprehensive assets defense strategy.</p>
+            <a href="intake.html" class="hero-btn">Book a Free Case Evaluation</a>
+        </div>
+    </section>
+
+    <section class="services" id="practices">
+        <h2>Our Specialized Disciplines</h2>
+        <p>We provide elite representation designed to navigate highly complex modern legal landscapes with discretion and strategy.</p>
+        
+        <div class="grid">
+            <div class="card">
+                <div class="card-icon">§</div>
+                <h3>Commercial & Corporate Law</h3>
+                <p>Strategic architecture for enterprise litigation, complex mergers, business formation protection, and regulatory compliance safeguards.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">⚖</div>
+                <h3>High-Stakes Civil Litigation</h3>
+                <p>Trial-tested advocacy representing both corporate entities and private individuals aggressively in federal and state court systems.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🛡</div>
+                <h3>Asset Protection & Trusts</h3>
+                <p>Sophisticated, bulletproof asset shielding pipelines designed to secure family wealth, trust frameworks, and generational transfer structures.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        &copy; 2026 Robert Case & Partners. All Rights Reserved. Attorney Advertising Material. Discretion Assured.
+    </footer>
+
+</body>
+</html>

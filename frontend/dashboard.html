@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Robert Case & Partners</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f5;
+            margin: 0;
+            padding: 0;
+            color: #1e293b;
+        }
+        .navbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .navbar h1 {
+            margin: 0;
+            font-size: 18px;
+            color: #1e293b;
+        }
+        .btn-logout {
+            background-color: #dc2626;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-logout:hover { background-color: #b91c1c; }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            margin-top: 0;
+            font-size: 20px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 10px;
+            color: #c25e00;
+        }
+        .profile-detail {
+            margin: 12px 0;
+            font-size: 15px;
+        }
+        .profile-detail strong {
+            color: #475569;
+            width: 100px;
+            display: inline-block;
+        }
+        #loading {
+            text-align: center;
+            font-weight: bold;
+            color: #64748b;
+            padding: 40px;
+        }
+        #error-banner {
+            display: none;
+            background-color: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h1>Robert Case & Partners | Client Portal</h1>
+        <button id="logout-btn" class="btn-logout">Log Out</button>
+    </div>
+
+    <div class="container">
+        <div id="error-banner"></div>
+
+        <div id="loading">Verifying authentication session...</div>
+
+        <div id="dashboard-content" style="display: none;">
+            <div class="card">
+                <h2>User Profile</h2>
+                <div class="profile-detail">
+                    <strong>User ID:</strong> <span id="user-id">--</span>
+                </div>
+                <div class="profile-detail">
+                    <strong>Email:</strong> <span id="user-email">--</span>
+                </div>
+                <div class="profile-detail">
+                    <strong>Status:</strong> <span style="color: #16a34a; font-weight: bold;">Authenticated</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('access_token');
+
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        async function fetchUserProfile() {
+            const loadingDiv = document.getElementById('loading');
+            const contentDiv = document.getElementById('dashboard-content');
+            const errorBanner = document.getElementById('error-banner');
+
+            try {
+                const response = await fetch('/api/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    document.getElementById('user-id').innerText = data.user.user_id;
+                    document.getElementById('user-email').innerText = data.user.email;
+                    
+                    loadingDiv.style.display = 'none';
+                    contentDiv.style.display = 'block';
+                } else {
+                    localStorage.clear();
+                    window.location.href = '/login.html';
+                }
+            } catch (err) {
+                loadingDiv.style.display = 'none';
+                errorBanner.style.display = 'block';
+                errorBanner.innerText = 'Network error: Failed to connect to backend server.';
+            }
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = '/login.html';
+        });
+
+        fetchUserProfile();
+    </script>
+</body>
+</html>

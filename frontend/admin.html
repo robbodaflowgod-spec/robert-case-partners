@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - Robert Case & Partners</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #b45309;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #334155;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 2rem; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border); }
+        h1 { color: var(--primary); font-size: 1.75rem; }
+        .logout-btn { background-color: #64748b; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 0.5rem; }
+        .logout-btn:hover { background-color: #475569; }
+        .refresh-btn { background-color: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .refresh-btn:hover { background-color: #1e293b; }
+
+        .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: var(--card-bg); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+        .stat-card h3 { font-size: 0.875rem; text-transform: uppercase; color: #64748b; margin-bottom: 0.5rem; }
+        .stat-card p { font-size: 1.75rem; font-weight: bold; color: var(--primary); }
+
+        .table-container { background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background-color: #f1f5f9; color: var(--primary); font-weight: 600; padding: 1rem; border-bottom: 2px solid var(--border); }
+        td { padding: 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 0.95rem; }
+        
+        .status-badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 50px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .status-pending { background-color: #fef3c7; color: #d97706; }
+        .status-reviewed { background-color: #dcfce7; color: #15803d; }
+        
+        .notes-input { width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; }
+        .action-btn { background-color: var(--accent); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+        .action-btn:hover { background-color: #92400e; }
+        .no-data { text-align: center; padding: 3rem; color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Robert Case & Partners</h1>
+            <p style="color: #64748b; margin-top: 0.25rem;">Legal Consultation Requests Pipeline</p>
+        </div>
+        <div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+            <button class="refresh-btn" onclick="fetchIntakes()">Refresh Data</button>
+        </div>
+    </header>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>Total Intake Requests</h3>
+            <p id="stat-total">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Pending Review</h3>
+            <p id="stat-pending" style="color: #d97706;">0</p>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Client Name</th>
+                    <th>Brief Case Summary</th>
+                    <th>Status</th>
+                    <th>Internal Review Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="intake-rows"></tbody>
+        </table>
+        <div id="loading-state" class="no-data">Loading application entries...</div>
+    </div>
+
+    <script>
+        // Security Gate: Instant rejection if no token exists in local browser memory
+        if (!localStorage.getItem('adminToken')) {
+            window.location.href = 'login.html';
+        }
+
+        const API_URL = "http://127.0.0.1:8000/api/intakes";
+
+        async function fetchIntakes() {
+            const rowContainer = document.getElementById("intake-rows");
+            const loadingState = document.getElementById("loading-state");
+            
+            try {
+                // Fetch request built with the dynamic Authorization payload header
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    }
+                });
+                
+                // Kick to login if token is expired or unauthorized
+                if (response.status === 401) {
+                    localStorage.removeItem('adminToken');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const data = await response.json();
+                rowContainer.innerHTML = "";
+                
+                if (data.length === 0) {
+                    loadingState.style.display = "block";
+                    loadingState.innerText = "No cases found in the pipeline database.";
+                    return;
+                }
+                
+                loadingState.style.display = "none";
+                let pendingCount = 0;
+
+                data.forEach(item => {
+                    if (item.status === "pending") pendingCount++;
+                    
+                    const isPending = item.status === "pending";
+                    const badgeClass = isPending ? "status-pending" : "status-reviewed";
+
+                    const rowHTML = `
+                        <tr>
+                            <td><strong>${item.full_name}</strong><br><small style="color:#64748b">${item.email}</small></td>
+                            <td>${item.brief_summary || ''}</td>
+                            <td><span class="status-badge ${badgeClass}">${item.status}</span></td>
+                            <td>
+                                <input type="text" id="notes-${item.id}" class="notes-input" 
+                                       value="${item.review_notes || ''}" 
+                                       ${!isPending ? 'disabled' : 'placeholder="Add case analysis..."'}>
+                            </td>
+                            <td>
+                                ${isPending ? `<button class="action-btn" onclick="saveReview('${item.id}')">Resolve Case</button>` : '<span style="color:#94a3b8">Archived</span>'}
+                            </td>
+                        </tr>
+                    `;
+                    rowContainer.insertAdjacentHTML("beforeend", rowHTML);
+                });
+
+                document.getElementById("stat-total").innerText = data.length;
+                document.getElementById("stat-pending").innerText = pendingCount;
+
+            } catch (error) {
+                loadingState.innerText = "Error connecting to backend services.";
+            }
+        }
+
+        async function saveReview(id) {
+            const notesValue = document.getElementById(`notes-${id}`).value;
+            
+            try {
+                // Patch request built with the dynamic Authorization payload header
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'PATCH',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    },
+                    body: JSON.stringify({
+                        status: "reviewed",
+                        review_notes: notesValue
+                    })
+                });
+                
+                if (response.status === 401) {
+                    localStorage.removeItem('adminToken');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                if (response.ok) {
+                    fetchIntakes(); 
+                }
+            } catch (error) {
+                alert("Failed to update case state.");
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('adminToken');
+            window.location.href = 'login.html';
+        }
+
+        // Run data generation hook when page window initializes
+        window.onload = fetchIntakes;
+    </script>
+</body>
+</html>
