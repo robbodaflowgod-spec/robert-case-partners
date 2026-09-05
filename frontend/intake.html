@@ -3,152 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Case Intake - Robert Case & Partners Advocates</title>
+    <title>Confidential Client Intake - Robert Case & Partners</title>
     <style>
-        .banner {
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-            font-size: 14px;
-            display: none;
+        :root {
+            --primary: #0f172a;
+            --accent: #b45309;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #cbd5e1;
         }
-        .banner-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .banner-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        .form-group input, .form-group textarea {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 4rem 2rem; display: flex; justify-content: center; }
+
+        .form-container { background: var(--card); max-width: 600px; width: 100%; padding: 3rem; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        h2 { color: var(--primary); font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700; }
+        .subtitle { color: #64748b; margin-bottom: 2rem; font-size: 0.95rem; }
+
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--primary); }
+        input, textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; color: var(--text); outline: none; transition: border-color 0.2s; }
+        input:focus, textarea:focus { border-color: var(--accent); }
+        textarea { height: 120px; resize: vertical; }
+
+        .submit-btn { background: var(--primary); color: white; border: none; width: 100%; padding: 1rem; border-radius: 4px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 1rem; }
+        .submit-btn:hover { background: #1e293b; }
+
+        .message { margin-top: 1.5rem; padding: 1rem; border-radius: 4px; font-weight: 500; display: none; text-align: center; }
+        .success { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .error { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        
+        .back-link { display: inline-block; margin-bottom: 1.5rem; color: var(--accent); text-decoration: none; font-weight: 500; font-size: 0.9rem; }
+        .back-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>Client Intake Form</h2>
+    <div class="form-container">
+        <a href="index.html" class="back-link">← Return to Home</a>
+        <h2>Confidential Case Evaluation</h2>
+        <p class="subtitle">Please provide your details below. A senior legal analyst will review your submission shortly.</p>
 
-        <!-- UI Feedback Banners -->
-        <div id="error-banner" class="banner banner-danger"></div>
-        <div id="success-banner" class="banner banner-success"></div>
-
-        <form id="intake-form">
+        <form id="intakeForm">
             <div class="form-group">
-                <label for="full_name">Full Name</label>
-                <input type="text" id="full_name" name="full_name" required placeholder="John Doe">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" required placeholder="John Doe">
             </div>
 
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required placeholder="john@example.com">
+                <input type="email" id="email" required placeholder="john@example.com">
             </div>
 
+            <!-- 1. ADDED PHONE NUMBER FORM GROUP -->
             <div class="form-group">
                 <label for="phone">Phone Number</label>
-                <input type="text" id="phone" name="phone" required placeholder="+254 700 000 000">
+                <input type="tel" id="phone" required placeholder="+254 700 000000">
             </div>
 
             <div class="form-group">
-                <label for="service_required">Service Required</label>
-                <input type="text" id="service_required" name="service_required" required placeholder="e.g. Property Law / Civil Litigation">
+                <label for="description">Brief Case Description</label>
+                <textarea id="description" required placeholder="Please outline the nature of your legal matter..."></textarea>
             </div>
 
-            <div class="form-group">
-                <label for="case_summary">Case Summary</label>
-                <textarea id="case_summary" name="case_summary" rows="5" required placeholder="Brief description of your case..."></textarea>
-            </div>
-
-            <button type="submit" id="submit-btn">Submit Intake</button>
+            <button type="submit" class="submit-btn">Submit Case Request</button>
         </form>
+
+        <div id="responseMessage" class="message"></div>
     </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const intakeForm = document.getElementById('intake-form');
-    const errorBanner = document.getElementById('error-banner');
-    const successBanner = document.getElementById('success-banner');
-    const submitBtn = document.getElementById('submit-btn');
+    <script>
+        document.getElementById('intakeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const msgDiv = document.getElementById('responseMessage');
+            msgDiv.style.display = "none";
 
-    if (!intakeForm) return;
+            // 2. EXTRACT VALUES MAPPED TO BACKEND DATA MODIFICATIONS
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone_number: document.getElementById('phone').value, // 👈 Match backend snake_case variable
+                description: document.getElementById('description').value
+            };
 
-    intakeForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/intake', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
 
-        // 1. Reset visual banner states on new submission
-        if (errorBanner) {
-            errorBanner.style.display = 'none';
-            errorBanner.innerText = '';
-        }
-        if (successBanner) {
-            successBanner.style.display = 'none';
-            successBanner.innerText = '';
-        }
+                const result = await response.json();
 
-        // Disable button during network call
-        if (submitBtn) submitBtn.disabled = true;
-
-        const payload = {
-            full_name: document.getElementById('full_name')?.value || "",
-            email: document.getElementById('email')?.value || "",
-            phone: document.getElementById('phone')?.value || "",
-            service_required: document.getElementById('service_required')?.value || "",
-            case_summary: document.getElementById('case_summary')?.value || ""
-        };
-
-        try {
-            const response = await fetch('/api/intake', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                if (successBanner) {
-                    successBanner.innerText = data.message || "Intake form submitted successfully!";
-                    successBanner.style.display = 'block';
+                // 3. REFACTORED CONDITION TO MATCH YOUR FASTAPI PAYLOAD
+                if (response.ok && result.message === 'Success') { 
+                    msgDiv.className = "message success";
+                    msgDiv.innerText = "Application recorded successfully! Our legal team will reach out.";
+                    msgDiv.style.display = "block";
+                    document.getElementById('intakeForm').reset();
                 } else {
-                    alert("Intake form submitted successfully!");
+                    throw new Error("Server rejected request");
                 }
-                intakeForm.reset();
-            } else {
-                const errorMsg = data.detail || "Server rejected submission. Please check your inputs.";
-                if (errorBanner) {
-                    errorBanner.innerText = errorMsg;
-                    errorBanner.style.display = 'block';
-                } else {
-                    alert(errorMsg);
-                }
+            } catch (error) {
+                msgDiv.className = "message error";
+                msgDiv.innerText = "Error transmitting data. Ensure your API server is active.";
+                msgDiv.style.display = "block";
             }
-        } catch (err) {
-            const netErrorMsg = "Error transmitting data. Ensure your API server is active.";
-            if (errorBanner) {
-                errorBanner.innerText = netErrorMsg;
-                errorBanner.style.display = 'block';
-            } else {
-                alert(netErrorMsg);
-            }
-        } finally {
-            if (submitBtn) submitBtn.disabled = false;
-        }
-    });
-});
-</script>
+        });
+    </script>
 </body>
 </html>
