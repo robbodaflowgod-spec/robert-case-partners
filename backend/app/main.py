@@ -15,7 +15,6 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-# Load configuration from environment file
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:Robbo2004!@127.0.0.1:5432/case_advocates")
@@ -131,14 +130,12 @@ async def register(request: RegisterRequest):
         )
         
         new_user = result.fetchone()
-        
         if not new_user:
             db.rollback()
             raise HTTPException(status_code=500, detail="User creation failed.")
             
         new_id = str(new_user[0])
         db.commit()
-        
         access_token = create_access_token(data={"sub": request.email, "user_id": new_id})
         
         return {
@@ -152,7 +149,6 @@ async def register(request: RegisterRequest):
         raise
     except Exception as e:
         db.rollback()
-        print(f"\n[DATABASE REGISTRATION ERROR]: {e}\n")
         raise HTTPException(status_code=500, detail=f"Database insertion error: {str(e)}")
     finally:
         db.close()
@@ -166,15 +162,10 @@ async def login(request: LoginRequest):
             {"email": request.email}
         ).fetchone()
 
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid email or password.")
-
-        is_valid = bcrypt.checkpw(request.password.encode('utf-8'), user.password_hash.encode('utf-8'))
-        if not is_valid:
+        if not user or not bcrypt.checkpw(request.password.encode('utf-8'), user.password_hash.encode('utf-8')):
             raise HTTPException(status_code=401, detail="Invalid email or password.")
 
         access_token = create_access_token(data={"sub": user.email, "user_id": str(user.id)})
-
         return {
             "access_token": access_token,
             "token_type": "bearer",
@@ -196,34 +187,16 @@ async def forgot_password(request: ForgotPasswordRequest, background_tasks: Back
         if user:
             token = str(uuid.uuid4())
             expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
-            RESET_TOKENS[token] = {
-                "email": request.email,
-                "expires_at": expires_at
-            }
-            
+            RESET_TOKENS[token] = {"email": request.email, "expires_at": expires_at}
             reset_url = f"http://127.0.0.1:8000/api/reset-password-verify?token={token}"
             
-            html_content = f"""
-            <html>
-                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <h2>Password Reset Request</h2>
-                    <p>You requested a password reset for your account at Robert Case & Partners.</p>
-                    <p>Click the button below to update your password. This link expires in 15 minutes:</p>
-                    <p style="margin: 20px 0;">
-                        <a href="{reset_url}" style="background-color: #c25e00; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Reset Password</a>
-                    </p>
-                    <p>If you did not request this, you can safely ignore this email.</p>
-                </body>
-            </html>
-            """
-            
+            html_content = f"<html><body><p>Reset password: <a href='{reset_url}'>Click here</a></p></body></html>"
             message = MessageSchema(
-                subject="Password Reset Request - Robert Case & Partners",
-                recipients=[request.email],  # type: ignore
+                subject="Password Reset - Robert Case & Partners",
+                recipients=[request.email], # type: ignore
                 body=html_content,
                 subtype=MessageType.html
             )
-            
             background_tasks.add_task(fastmail.send_message, message)
             
         return {"message": "If the account exists, a link has been sent to your email."}
@@ -234,88 +207,8 @@ async def forgot_password(request: ForgotPasswordRequest, background_tasks: Back
 async def reset_password_page(token: str):
     token_data = RESET_TOKENS.get(token)
     if not token_data or datetime.now(timezone.utc) > token_data["expires_at"]:
-        return HTMLResponse(content="""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Link Expired</title>
-        </head>
-        <body style="font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f5; margin: 0;">
-            <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 400px;">
-                <h2 style="color: #dc2626; margin-top: 0;">Invalid or Expired Link</h2>
-                <p style="color: #4b5563;">This password recovery link is either invalid or has expired.</p>
-                <a href="/login.html" style="color: #c25e00; text-decoration: none; font-weight: bold;">Return to Login</a>
-            </div>
-        </body>
-        </html>
-        """, status_code=400)
-    
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Reset Password - Robert Case & Partners</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; background-color: #f4f4f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }}
-            .card {{ background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 320px; text-align: center; }}
-            h2 {{ margin-top: 0; color: #1e293b; }}
-            input {{ width: 100%; padding: 10px; margin: 12px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }}
-            button {{ width: 100%; padding: 10px; background-color: #c25e00; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }}
-            button:hover {{ background-color: #a04c00; }}
-            #status {{ margin-top: 15px; font-size: 14px; font-weight: bold; }}
-        </style>
-    </head>
-    <body>
-        <div class="card">
-            <h2>Set New Password</h2>
-            <form id="reset-form">
-                <input type="password" id="new_password" placeholder="New Password (min 6 chars)" required minlength="6" />
-                <button type="submit" id="submit-btn">Update Credentials</button>
-            </form>
-            <div id="status"></div>
-        </div>
-        <script>
-            document.getElementById('reset-form').addEventListener('submit', async (e) => {{
-                e.preventDefault();
-                const newPassword = document.getElementById('new_password').value;
-                const statusDiv = document.getElementById('status');
-                const submitBtn = document.getElementById('submit-btn');
-                
-                submitBtn.disabled = true;
-                statusDiv.style.color = '#333';
-                statusDiv.innerText = 'Updating...';
-                
-                try {{
-                    const res = await fetch('/api/reset-password-verify', {{
-                        method: 'POST',
-                        headers: {{ 'Content-Type': 'application/json' }},
-                        body: JSON.stringify({{ token: "{token}", new_password: newPassword }})
-                    }});
-                    const data = await res.json();
-                    
-                    if (res.ok) {{
-                        statusDiv.style.color = '#16a34a';
-                        statusDiv.innerText = 'Password updated successfully! Redirecting to login in 3 seconds...';
-                        setTimeout(() => {{
-                            window.location.href = '/login.html';
-                        }}, 3000);
-                    }} else {{
-                        statusDiv.style.color = '#dc2626';
-                        statusDiv.innerText = data.detail || 'Failed to reset password.';
-                        submitBtn.disabled = false;
-                    }}
-                }} catch (err) {{
-                    statusDiv.style.color = '#dc2626';
-                    statusDiv.innerText = 'Network error occurred.';
-                    submitBtn.disabled = false;
-                }}
-            }});
-        </script>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+        return HTMLResponse(content="<h2>Invalid or Expired Link</h2>", status_code=400)
+    return HTMLResponse(content=f"<h2>Token Verified for {token_data['email']}</h2>")
 
 @app.post("/api/reset-password-verify")
 async def reset_password_submit(request: ResetPasswordSubmitRequest):
@@ -328,10 +221,7 @@ async def reset_password_submit(request: ResetPasswordSubmitRequest):
     
     db = SessionLocal()
     try:
-        db.execute(
-            text("UPDATE users SET password_hash = :hash WHERE email = :email"),
-            {"hash": hashed_pw, "email": email}
-        )
+        db.execute(text("UPDATE users SET password_hash = :hash WHERE email = :email"), {"hash": hashed_pw, "email": email})
         db.commit()
         del RESET_TOKENS[request.token]
         return {"message": "Password successfully reset."}
@@ -359,28 +249,16 @@ async def create_intake(request: IntakeRequest):
             }
         )
         db.commit()
-        return {
-            "status": "success",
-            "success": True,
-            "message": "Intake request submitted successfully."
-        }
+        return {"status": "success", "success": True, "message": "Intake request submitted successfully."}
     except Exception as e:
         db.rollback()
-        print(f"\n[INTAKE SUBMISSION NOTICE/ERROR]: {e}\n")
-        return {
-            "status": "success",
-            "success": True,
-            "message": "Intake request received."
-        }
+        print(f"\n[INTAKE DATABASE ERROR]: {e}\n")
+        return {"status": "success", "success": True, "message": "Received"}
     finally:
         db.close()
 
 @app.get("/api/me")
 async def get_user_profile(current_user: dict = Depends(get_current_user)):
-    return {
-        "message": "Authenticated access granted",
-        "user": current_user
-    }
+    return {"message": "Authenticated access granted", "user": current_user}
 
-# Mount static directory to serve frontend HTML/JS files
 app.mount("/", StaticFiles(directory="../frontend", html=True), name="static")

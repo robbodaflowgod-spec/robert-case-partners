@@ -38,6 +38,42 @@
         .back-link:hover { text-decoration: underline; }
     </style>
 </head>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const payload = {
+            full_name: document.getElementById('full_name')?.value || document.querySelector('[name="full_name"]')?.value || "",
+            email: document.getElementById('email')?.value || document.querySelector('[name="email"]')?.value || "",
+            phone: document.getElementById('phone')?.value || document.querySelector('[name="phone"]')?.value || "",
+            service_required: document.getElementById('service_required')?.value || document.querySelector('[name="service_required"]')?.value || "",
+            case_summary: document.getElementById('case_summary')?.value || document.querySelector('[name="case_summary"]')?.value || ""
+        };
+
+        try {
+            const res = await fetch('/api/intake', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                alert("Intake form submitted successfully!");
+                form.reset();
+            } else {
+                alert("Submission error: " + (data.detail || "Server rejected request"));
+            }
+        } catch (err) {
+            alert("Network error: Could not reach backend server.");
+        }
+    });
+});
+</script>
 <body>
 
     <div class="form-container">
