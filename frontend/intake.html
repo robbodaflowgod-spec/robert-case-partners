@@ -3,115 +3,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confidential Client Intake - Robert Case & Partners</title>
+    <title>Client Intake Form | Robert Case & Partners Advocates</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #0f172a;
-            --accent: #b45309;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
+            --navy-dark: #0f172a;
+            --navy-light: #1e293b;
+            --gold: #c5a059;
+            --gold-hover: #b38e46;
+            --bg-slate: #f8fafc;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
             --border: #cbd5e1;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background-color: var(--bg); color: var(--text); padding: 4rem 2rem; display: flex; justify-content: center; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-        .form-container { background: var(--card); max-width: 600px; width: 100%; padding: 3rem; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        h2 { color: var(--primary); font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700; }
-        .subtitle { color: #64748b; margin-bottom: 2rem; font-size: 0.95rem; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-slate);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
 
-        .form-group { margin-bottom: 1.5rem; }
-        label { display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--primary); }
-        input, textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; font-size: 1rem; color: var(--text); outline: none; transition: border-color 0.2s; }
-        input:focus, textarea:focus { border-color: var(--accent); }
-        textarea { height: 120px; resize: vertical; }
+        .intake-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 650px;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
 
-        .submit-btn { background: var(--primary); color: white; border: none; width: 100%; padding: 1rem; border-radius: 4px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 1rem; }
-        .submit-btn:hover { background: #1e293b; }
+        .header {
+            background-color: var(--navy-dark);
+            color: #ffffff;
+            padding: 32px 40px;
+            text-align: center;
+            border-bottom: 3px solid var(--gold);
+        }
 
-        .message { margin-top: 1.5rem; padding: 1rem; border-radius: 4px; font-weight: 500; display: none; text-align: center; }
-        .success { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-        .error { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-        
-        .back-link { display: inline-block; margin-bottom: 1.5rem; color: var(--accent); text-decoration: none; font-weight: 500; font-size: 0.9rem; }
-        .back-link:hover { text-decoration: underline; }
+        .header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            color: #ffffff;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 13.5px;
+            font-weight: 300;
+        }
+
+        form {
+            padding: 36px 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 12.5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--navy-dark);
+            margin-bottom: 8px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: var(--text-dark);
+            background-color: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 110px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background-color: var(--navy-dark);
+            color: #ffffff;
+            border: 1px solid var(--navy-dark);
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--gold);
+            border-color: var(--gold);
+            color: var(--navy-dark);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 13.5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-error {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background-color: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        @media (max-width: 640px) {
+            .header, form {
+                padding: 24px;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div class="form-container">
-        <a href="index.html" class="back-link">← Return to Home</a>
-        <h2>Confidential Case Evaluation</h2>
-        <p class="subtitle">Please provide your details below. A senior legal analyst will review your submission shortly.</p>
-
-        <form id="intakeForm">
-            <div class="form-group">
-                <label for="name">Full Name</label>
-                <input type="text" id="name" required placeholder="John Doe">
-            </div>
-
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" required placeholder="john@example.com">
-            </div>
-
-            <!-- 1. ADDED PHONE NUMBER FORM GROUP -->
-            <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" required placeholder="+254 700 000000">
-            </div>
-
-            <div class="form-group">
-                <label for="description">Brief Case Description</label>
-                <textarea id="description" required placeholder="Please outline the nature of your legal matter..."></textarea>
-            </div>
-
-            <button type="submit" class="submit-btn">Submit Case Request</button>
-        </form>
-
-        <div id="responseMessage" class="message"></div>
+<div class="intake-card">
+    <div class="header">
+        <h1>Robert Case & Partners</h1>
+        <p>Advocates & Legal Consultants • Client Intake Portal</p>
     </div>
 
-    <script>
-        document.getElementById('intakeForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const msgDiv = document.getElementById('responseMessage');
-            msgDiv.style.display = "none";
+    <form id="intake-form">
+        <div id="alert-error" class="alert alert-error"></div>
+        <div id="alert-success" class="alert alert-success"></div>
 
-            // 2. EXTRACT VALUES MAPPED TO BACKEND DATA MODIFICATIONS
-            const formData = {
-                name: document.getElementById('name').value,
-                email: document.getElementById('email').value,
-                phone_number: document.getElementById('phone').value, // 👈 Match backend snake_case variable
-                description: document.getElementById('description').value
+        <div class="form-group">
+            <label for="full_name">Full Name</label>
+            <input type="text" id="full_name" name="full_name" placeholder="e.g. Jane Doe" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="jane@example.com" required>
+        </div>
+
+        <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" placeholder="+254 700 000 000" required>
+        </div>
+
+        <div class="form-group">
+            <label for="service_required">Legal Service Required</label>
+            <select id="service_required" name="service_required" required>
+                <option value="" disabled selected>Select practice area...</option>
+                <option value="Property & Conveyancing">Property & Conveyancing</option>
+                <option value="Corporate & Commercial Law">Corporate & Commercial Law</option>
+                <option value="Civil & Commercial Litigation">Civil & Commercial Litigation</option>
+                <option value="Family Law & Estate Planning">Family Law & Estate Planning</option>
+                <option value="General Legal Advisory">General Legal Advisory</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="case_summary">Case Summary</label>
+            <textarea id="case_summary" name="case_summary" placeholder="Provide a brief summary of your legal matter..." required></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submit-btn">Submit Case Details</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const intakeForm = document.getElementById('intake-form');
+        const alertError = document.getElementById('alert-error');
+        const alertSuccess = document.getElementById('alert-success');
+        const submitBtn = document.getElementById('submit-btn');
+
+        if (!intakeForm) return;
+
+        intakeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            alertError.style.display = 'none';
+            alertSuccess.style.display = 'none';
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Transmitting...";
+
+            const payload = {
+                full_name: document.getElementById('full_name')?.value || "",
+                email: document.getElementById('email')?.value || "",
+                phone: document.getElementById('phone')?.value || "",
+                service_required: document.getElementById('service_required')?.value || "",
+                case_summary: document.getElementById('case_summary')?.value || ""
             };
 
             try {
-                const response = await fetch('http://127.0.0.1:8000/api/intake', {
+                const response = await fetch('/api/intake', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
+                const data = await response.json();
 
-                // 3. REFACTORED CONDITION TO MATCH YOUR FASTAPI PAYLOAD
-                if (response.ok && result.message === 'Success') { 
-                    msgDiv.className = "message success";
-                    msgDiv.innerText = "Application recorded successfully! Our legal team will reach out.";
-                    msgDiv.style.display = "block";
-                    document.getElementById('intakeForm').reset();
+                if (response.ok) {
+                    alertSuccess.innerText = data.message || "Your case details have been successfully submitted.";
+                    alertSuccess.style.display = 'block';
+                    intakeForm.reset();
                 } else {
-                    throw new Error("Server rejected request");
+                    alertError.innerText = data.detail || "Submission failed. Please check your inputs or try again.";
+                    alertError.style.display = 'block';
                 }
-            } catch (error) {
-                msgDiv.className = "message error";
-                msgDiv.innerText = "Error transmitting data. Ensure your API server is active.";
-                msgDiv.style.display = "block";
+            } catch (err) {
+                alertError.innerText = "Network error: Unable to connect to the server endpoint.";
+                alertError.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit Case Details";
             }
         });
-    </script>
+    });
+</script>
+
 </body>
 </html>
