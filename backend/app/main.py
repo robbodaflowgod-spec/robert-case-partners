@@ -48,7 +48,6 @@ conf = ConnectionConfig(
 )
 
 fastmail = FastMail(conf)
-
 RESET_TOKENS = {}
 
 class RegisterRequest(BaseModel):
@@ -109,7 +108,6 @@ async def register(request: RegisterRequest):
             raise HTTPException(status_code=400, detail="An account with this email already exists.")
             
         hashed_pw = bcrypt.hashpw(request.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        
         first_name_val = request.first_name if request.first_name is not None else ""
         last_name_val = request.last_name if request.last_name is not None else ""
         role_val = request.role if request.role else "client"
@@ -252,8 +250,7 @@ async def create_intake(request: IntakeRequest):
         return {"status": "success", "success": True, "message": "Intake request submitted successfully."}
     except Exception as e:
         db.rollback()
-        print(f"\n[INTAKE DATABASE ERROR]: {e}\n")
-        return {"status": "success", "success": True, "message": "Received"}
+        raise HTTPException(status_code=500, detail=f"Database execution error: {str(e)}")
     finally:
         db.close()
 
