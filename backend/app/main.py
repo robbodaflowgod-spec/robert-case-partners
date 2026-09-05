@@ -22,10 +22,16 @@ SECRET_KEY = os.getenv("SECRET_KEY", "default_secret_key_change_in_production")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
-engine = create_engine(DATABASE_URL)
+# Database setup with connection pooling safeguards for Supabase/Render
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=300
+)
 SessionLocal = sessionmaker(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title="Robert Case & Partners API")
+
 security = HTTPBearer()
 
 app.add_middleware(
@@ -36,6 +42,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mailer configuration
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME", "robertsonroberts58@gmail.com"),
     MAIL_PASSWORD=os.getenv("MAIL_PASSWORD", ""),  # type: ignore
@@ -49,6 +56,9 @@ conf = ConnectionConfig(
 
 fastmail = FastMail(conf)
 RESET_TOKENS = {}
+
+
+# --- Pydantic Schemas ---
 
 class RegisterRequest(BaseModel):
     email: EmailStr
@@ -75,6 +85,9 @@ class IntakeRequest(BaseModel):
     service_required: Optional[str] = ""
     case_summary: Optional[str] = ""
 
+
+# --- Authentication Helpers ---
+
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -95,6 +108,9 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Could not validate credentials.")
 
+
+# --- API Routes ---
+
 @app.post("/api/register")
 async def register(request: RegisterRequest):
     db = SessionLocal()
@@ -108,9 +124,6 @@ async def register(request: RegisterRequest):
             raise HTTPException(status_code=400, detail="An account with this email already exists.")
             
         hashed_pw = bcrypt.hashpw(request.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        first_name_val = request.first_name if request.first_name is not None else ""
-        last_name_val = request.last_name if request.last_name is not None else ""
-        role_val = request.role if request.role else "client"
 
         result = db.execute(
             text("""
@@ -121,9 +134,9 @@ async def register(request: RegisterRequest):
             {
                 "email": request.email, 
                 "hash": hashed_pw,
-                "first_name": first_name_val,
-                "last_name": last_name_val,
-                "role": role_val
+                "first_name": request.first_name or "",
+                "last_name": request.last_name or "",
+                "role": request.role or "client"
             }
         )
         
@@ -186,7 +199,7 @@ async def forgot_password(request: ForgotPasswordRequest, background_tasks: Back
             token = str(uuid.uuid4())
             expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
             RESET_TOKENS[token] = {"email": request.email, "expires_at": expires_at}
-            reset_url = f"http://127.0.0.1:8000/api/reset-password-verify?token={token}"
+            reset_url = f"https://robert-case-partners.onrender.com/api/reset-password-verify?token={token}"
             
             html_content = f"<html><body><p>Reset password: <a href='{reset_url}'>Click here</a></p></body></html>"
             message = MessageSchema(
@@ -258,4 +271,11 @@ async def create_intake(request: IntakeRequest):
 async def get_user_profile(current_user: dict = Depends(get_current_user)):
     return {"message": "Authenticated access granted", "user": current_user}
 
-app.mount("/", StaticFiles(directory="../frontend", html=True), name="static")
+
+# --- Static Files Mount ---
+
+frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+if not os.path.exists(frontend_path):
+    frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+
+app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")
