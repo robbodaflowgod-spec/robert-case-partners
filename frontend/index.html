@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Robert Case & Partners | Premier Legal Counsel</title>
+    <title>Robert Case & Partners | Justice a Gift to Humanity</title>
     <style>
         :root {
             --primary: #0f172a;
@@ -29,51 +29,56 @@
 
         /* Hero Section */
         .hero { display: flex; align-items: center; justify-content: space-between; padding: 6rem 4rem; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: var(--white); }
-        .hero-content { max-width: 650px; }
-        .hero-subtitle { color: var(--accent); font-size: 0.9rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .hero-content { max-width: 750px; }
+        .hero-tagline { color: var(--accent); font-size: 0.95rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
         .hero-content h1 { font-size: 3.2rem; line-height: 1.1; margin-bottom: 1.2rem; font-weight: 800; }
-        .hero-content p { font-size: 1.15rem; color: #94a3b8; margin-bottom: 2.5rem; }
+        .hero-content p { font-size: 1.2rem; color: #94a3b8; margin-bottom: 2.5rem; }
         .hero-btn { background: var(--accent); color: var(--white); text-decoration: none; padding: 0.8rem 2rem; font-weight: 600; border-radius: 4px; transition: background 0.2s; display: inline-block; }
         .hero-btn:hover { background: var(--accent-hover); }
 
-        /* About Section */
-        .about { padding: 5rem 4rem; background: var(--white); }
+        /* Content Sections */
+        .section-padding { padding: 5rem 4rem; }
+        .bg-alt { background-color: var(--bg-light); }
         .section-title { font-size: 2.2rem; margin-bottom: 0.5rem; color: var(--primary); text-align: center; }
-        .section-tagline { color: var(--accent); font-style: italic; text-align: center; font-size: 1.1rem; margin-bottom: 3rem; font-weight: 600; }
-        .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; max-width: 1200px; margin: 0 auto; }
-        .about-card { background: var(--bg-light); padding: 2.5rem; border-radius: 8px; border-left: 4px solid var(--primary); }
-        .about-card.highlight { border-left-color: var(--accent); }
-        .about-card h3 { color: var(--primary); font-size: 1.4rem; margin-bottom: 1rem; }
-        .about-card p { color: var(--text-dark); margin-bottom: 1rem; font-size: 0.98rem; }
-        .leader-badge { list-style: none; margin-top: 1rem; }
-        .leader-badge li { position: relative; padding-left: 1.5rem; margin-bottom: 0.5rem; color: var(--text-dark); font-weight: 500; }
-        .leader-badge li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: bold; }
+        .section-subtitle { text-align: center; color: var(--text-light); margin-bottom: 3rem; font-size: 1.05rem; }
 
-        /* Practice Areas Section */
-        .services { padding: 5rem 4rem; background: var(--bg-light); text-align: center; }
-        .services > p { color: var(--text-light); margin-bottom: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; }
-        .card { background: var(--white); padding: 2.2rem 1.8rem; border-radius: 8px; border: 1px solid #e2e8f0; text-align: left; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s; }
+        /* About & Distinctiveness */
+        .content-block { max-width: 1000px; margin: 0 auto 2.5rem auto; background: var(--white); padding: 2.5rem; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .content-block h3 { color: var(--primary); margin-bottom: 1rem; font-size: 1.4rem; }
+        .content-block p { color: var(--text-dark); margin-bottom: 1.2rem; font-size: 1rem; line-height: 1.7; }
+
+        /* Vision & Mission Highlight Box */
+        .vm-box { background: var(--primary); color: var(--white); padding: 3rem; border-radius: 8px; max-width: 1000px; margin: 0 auto; border-left: 6px solid var(--accent); }
+        .vm-box h3 { color: var(--accent); font-size: 1.5rem; margin-bottom: 1rem; }
+        .vm-box p { color: #cbd5e1; margin-bottom: 1rem; line-height: 1.7; font-size: 1.02rem; }
+
+        /* Practice Areas Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.8rem; max-width: 1200px; margin: 0 auto; }
+        .card { background: var(--white); padding: 2rem; border-radius: 8px; border: 1px solid #e2e8f0; text-align: left; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s; }
         .card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
-        .card-icon { color: var(--accent); font-size: 1.6rem; margin-bottom: 1rem; font-weight: bold; }
-        .card h3 { margin-bottom: 0.75rem; color: var(--primary); font-size: 1.2rem; }
-        .card p { color: var(--text-light); font-size: 0.92rem; line-height: 1.5; }
+        .card-icon { color: var(--accent); font-size: 1.5rem; margin-bottom: 0.8rem; font-weight: bold; }
+        .card h3 { margin-bottom: 0.5rem; color: var(--primary); font-size: 1.15rem; }
 
-        /* Contact Details Footer Strip */
-        .location-strip { background: #1e293b; color: #94a3b8; padding: 3rem 4rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; border-top: 1px solid #334155; }
-        .location-strip h4 { color: var(--white); margin-bottom: 0.8rem; font-size: 1.1rem; }
-        .location-strip p { font-size: 0.9rem; line-height: 1.6; }
+        /* Affiliates Links */
+        .links-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; max-width: 1000px; margin: 0 auto; }
+        .link-card { background: var(--white); padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; }
+        .link-card a { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 1rem; }
+        .link-card a:hover { text-decoration: underline; color: var(--accent-hover); }
+
+        /* Contact Details Strip */
+        .location-strip { background: #1e293b; color: #94a3b8; padding: 4rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2.5rem; border-top: 1px solid #334155; }
+        .location-strip h4 { color: var(--white); margin-bottom: 1rem; font-size: 1.15rem; }
+        .location-strip p, .location-strip ul { font-size: 0.95rem; line-height: 1.7; list-style: none; }
+        .location-strip a { color: var(--accent); text-decoration: none; }
 
         /* Footer */
         footer { background: var(--primary); color: #64748b; text-align: center; padding: 2rem; border-top: 1px solid #1e293b; font-size: 0.9rem; }
 
         @media (max-width: 900px) {
             nav { padding: 1.5rem; }
-            .hero { flex-direction: column; text-align: center; padding: 4rem 1.5rem; }
+            .hero { padding: 4rem 1.5rem; text-align: center; }
             .hero-content h1 { font-size: 2.4rem; }
-            .about { padding: 4rem 1.5rem; }
-            .about-grid { grid-template-columns: 1fr; }
-            .services { padding: 4rem 1.5rem; }
+            .section-padding { padding: 3.5rem 1.5rem; }
             .location-strip { padding: 2.5rem 1.5rem; }
         }
     </style>
@@ -83,119 +88,160 @@
     <nav>
         <div class="logo">ROBERT <span>CASE</span> & PARTNERS</div>
         <div class="nav-links">
-            <a href="#about">About</a>
+            <a href="#about">The Firm</a>
             <a href="#practices">Practice Areas</a>
+            <a href="#affiliates">Affiliates & Links</a>
+            <a href="#contact">Contact Us</a>
             <a href="intake.html" class="nav-cta">Request Consultation</a>
         </div>
     </nav>
 
+    <!-- HERO SECTION -->
     <section class="hero">
         <div class="hero-content">
-            <div class="hero-subtitle">Est. 1997 • Nairobi, Kenya</div>
-            <h1>Defending Your Rights, Securing Your Future.</h1>
-            <p>Comprehensive, holistic legal representation under one roof. Providing business, litigation, and regulatory solutions for over two decades.</p>
-            <a href="intake.html" class="hero-btn">Book a Case Evaluation</a>
+            <div class="hero-tagline">Justice a Gift to Humanity</div>
+            <h1>Legal Representation at its Best</h1>
+            <p>We are here to serve your needs. And if you'd like to learn more, let's get started.</p>
+            <a href="intake.html" class="hero-btn">Book a Legal Evaluation</a>
         </div>
     </section>
 
-    <!-- ABOUT SECTION -->
-    <section class="about" id="about">
-        <h2 class="section-title">About Our Firm</h2>
-        <div class="section-tagline">"Justice a gift to humanity" — Legal representation at its best</div>
-        
-        <div class="about-grid">
-            <div class="about-card">
-                <h3>Our Firm Overview</h3>
-                <p>Robert Case & Partners is a Nairobi-based law firm situated at Queensway House along Kaunda Street in the Central Business District. We enjoy close proximity to major financial, commercial, and governmental institutions.</p>
-                <p>Established in 1997, our firm is strategically configured to deliver the highest quality legal services regardless of issue complexity, offering a full range of business and litigation expertise under one roof.</p>
-            </div>
+    <!-- THE FIRM / ABOUT SECTION -->
+    <section class="section-padding" id="about">
+        <h2 class="section-title">The Firm</h2>
+        <p class="section-subtitle">Established in 1997 by Robert Ongeri</p>
 
-            <div class="about-card highlight">
-                <h3>Principal Partner</h3>
-                <p><strong>Robert Ongeri</strong> (Founder & Managing Partner)</p>
-                <p>With over 14 years of specialized legal expertise, Robert leads a client-focused practice committed to high performance and ethical integrity.</p>
-                <ul class="leader-badge">
-                    <li>Master of Laws (LL.M) Degree</li>
-                    <li>Certified Public Secretary (CPS)</li>
-                    <li>Registered Patent Agent</li>
-                    <li>NEMA Registered Legal Environmental Expert</li>
-                </ul>
-            </div>
+        <div class="content-block">
+            <h3>Firm Background</h3>
+            <p>
+                Robert Case and Partners is a Nairobi based law firm with offices situated at Queensway House along the secure Standard Street next to Hilton Hotel in the heart of the central business district. We enjoy the convenience of close proximity to major financial, commercial and governmental institutions. 
+            </p>
+            <p>
+                The firm was established by <strong>Robert Ongeri</strong> in 1997. Robert holds a Masters of Law Degree and has a rich legal expertise spanning over a period of 14 years. We are Certified Public Secretaries, Patent Agents and Legal Experts registered with the National Environmental Management Authority (NEMA).
+            </p>
+        </div>
+
+        <div class="content-block">
+            <h3>Firm Attributes & Distinctiveness</h3>
+            <p>
+                The distinctiveness of our firm is that we have the ability to offer a variety of services under one roof and we are thereof apt in providing a more comprehensive and holistic resolution to our clients' legal problems.
+            </p>
+            <p>
+                The firm is strategically sized and configured to deliver the highest quality service to our clientele regardless of the complexity of the legal issues. Since its inception, the firm has dedicated itself to an excellent service by providing a full range of business and litigation legal services.
+            </p>
+        </div>
+
+        <!-- VISION AND MISSION -->
+        <div class="vm-box">
+            <h3>Vision and Mission Statement</h3>
+            <p>
+                At Robert Case and Partners, we consider the practice of law to be, first and foremost, about our clients. We are unwavering in our commitment to exceptional client service. We pride ourselves for the breadth and depth of our legal expertise and experience, and we apply that expertise and experience to help our clients succeed. We meet our clients' objectives by developing a strong grasp of their business and their industry and by building trusted relationships with their people.
+            </p>
+            <p>
+                We aim to develop and maintain a high level of performance, adhere to the ethical standards of our profession and endeavor to satisfy the needs of our clients and to promote the welfare of the staff and members of the firm.
+            </p>
         </div>
     </section>
 
     <!-- PRACTICE AREAS SECTION -->
-    <section class="services" id="practices">
-        <h2 class="section-title">Our Practice Areas</h2>
-        <p>Comprehensive legal disciplines structured to resolve complex corporate, regulatory, and personal matters.</p>
-        
+    <section class="section-padding bg-alt" id="practices">
+        <h2 class="section-title">Practice Areas</h2>
+        <p class="section-subtitle">Full-service legal coverage across diverse corporate and regulatory fields</p>
+
         <div class="grid">
             <div class="card">
                 <div class="card-icon">⚖</div>
                 <h3>Litigation</h3>
-                <p>Civil, commercial, and criminal litigation representation across all courts and dispute resolution forums.</p>
-            </div>
-            <div class="card">
-                <div class="card-icon">🏬</div>
-                <h3>Property Law & Conveyance</h3>
-                <p>Real estate acquisitions, property transfer, lease agreements, title perfection, and development compliance.</p>
-            </div>
-            <div class="card">
-                <div class="card-icon">💼</div>
-                <h3>Corporate & Commercial Law</h3>
-                <p>Business advisory, commercial agreements, company formation, joint ventures, and regulatory governance.</p>
-            </div>
-            <div class="card">
-                <div class="card-icon">🏦</div>
-                <h3>Banking & Finance</h3>
-                <p>Financial transaction structuring, loan documentation, security perfection, and advisory for lending institutions.</p>
             </div>
             <div class="card">
                 <div class="card-icon">💡</div>
                 <h3>Intellectual Property Law</h3>
-                <p>Registration, protection, and enforcement of trademarks, patents, copyrights, and commercial brand assets.</p>
             </div>
             <div class="card">
-                <div class="card-icon">🌿</div>
-                <h3>Environmental Law & Consulting</h3>
-                <p>NEMA compliance, environmental impact assessments, audits, and regulatory advice.</p>
+                <div class="card-icon">🏦</div>
+                <h3>Banking and Finance</h3>
+            </div>
+            <div class="card">
+                <div class="card-icon">🏬</div>
+                <h3>Property Law and Conveyance</h3>
+            </div>
+            <div class="card">
+                <div class="card-icon">💼</div>
+                <h3>Corporate and Commercial Law</h3>
             </div>
             <div class="card">
                 <div class="card-icon">📡</div>
-                <h3>Broadcasting & Communication</h3>
-                <p>Legal advisories on telecommunications, media compliance, spectrum licensing, and digital regulatory policy.</p>
+                <h3>Broadcasting and Communication</h3>
+            </div>
+            <div class="card">
+                <div class="card-icon">🌿</div>
+                <h3>Environmental Law and Consulting</h3>
             </div>
             <div class="card">
                 <div class="card-icon">📜</div>
-                <h3>Estate Planning & Administration</h3>
-                <p>Drafting wills, establishing trust frameworks, estate administration, and probate succession management.</p>
+                <h3>Estate Planning and Administration</h3>
             </div>
             <div class="card">
                 <div class="card-icon">🛡</div>
                 <h3>Insurance Law</h3>
-                <p>Policy drafting, subrogation claims, policy risk analysis, and representation in insurance disputes.</p>
             </div>
         </div>
     </section>
 
-    <!-- CONTACT DETAILS STRIP -->
-    <div class="location-strip">
+    <!-- AFFILIATES & LINKS -->
+    <section class="section-padding" id="affiliates">
+        <h2 class="section-title">Affiliates & Legal Links</h2>
+        <p class="section-subtitle">Key statutory and legal resources</p>
+
+        <div class="links-grid">
+            <div class="link-card">
+                <a href="http://kenyalaw.org/kl/index.php?id=81" target="_blank" rel="noopener">Kenya Law Reports</a>
+            </div>
+            <div class="link-card">
+                <a href="https://www.lexafrica.com/" target="_blank" rel="noopener">Lex Africa</a>
+            </div>
+            <div class="link-card">
+                <a href="https://www.aflsf.org/partners/international-lawyers-africa-ilfa" target="_blank" rel="noopener">International Lawyers for Africa (ILFA)</a>
+            </div>
+            <div class="link-card">
+                <a href="http://online.lsk.or.ke/" target="_blank" rel="noopener">Online Statutes - Law of Kenya</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT DETAILS & LOCATION STRIP -->
+    <div class="location-strip" id="contact">
         <div>
             <h4>Office Location</h4>
-            <p>Kaunda Street, Queensway House 4th Floor<br>P.O. Box 16876-00100 Nairobi, Kenya</p>
+            <p>
+                Kaunda Street, Standard Street<br>
+                Queensway House, 4th Floor<br>
+                Next to Hilton Hotel, CBD<br>
+                P.O. Box 16876 00100 Nairobi-Kenya
+            </p>
         </div>
         <div>
-            <h4>Contact Details</h4>
-            <p>Phone: 0720 493 111 / 0722 769 271<br>Email: info@robertcaselaw.com</p>
+            <h4>Telephone & Fax</h4>
+            <ul>
+                <li>0720 493 111</li>
+                <li>0722 769 271</li>
+                <li>0733 665 345</li>
+                <li>0770 215 312</li>
+                <li>Fax Line: +254 342328</li>
+            </ul>
         </div>
         <div>
-            <h4>Working Hours</h4>
-            <p>Monday - Friday: 8:00 AM - 5:00 PM<br>Weekends & Holidays: Closed</p>
+            <h4>Email & Business Hours</h4>
+            <p>
+                Email: <a href="mailto:info@robertcaselaw.com">info@robertcaselaw.com</a><br><br>
+                Working Hours:<br>
+                Monday - Friday: 8:00 AM - 5:00 PM
+            </p>
         </div>
     </div>
 
     <footer>
-        &copy; 2026 Robert Case & Partners. All Rights Reserved. Attorney Advertising Material. Discretion Assured.
+        &copy; 2026 Robert Case & Partners. All Rights Reserved. Justice a gift to humanity.
     </footer>
 
 </body>
