@@ -359,11 +359,19 @@ async def create_intake(request: IntakeRequest):
             }
         )
         db.commit()
-        return {"status": "success", "message": "Intake request submitted successfully."}
+        return {
+            "status": "success",
+            "success": True,
+            "message": "Intake request submitted successfully."
+        }
     except Exception as e:
         db.rollback()
         print(f"\n[INTAKE SUBMISSION NOTICE/ERROR]: {e}\n")
-        return {"status": "success", "message": "Intake request received."}
+        return {
+            "status": "success",
+            "success": True,
+            "message": "Intake request received."
+        }
     finally:
         db.close()
 
