@@ -274,8 +274,19 @@ async def get_user_profile(current_user: dict = Depends(get_current_user)):
 
 # --- Static Files Mount ---
 
-frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
-if not os.path.exists(frontend_path):
-    frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+# --- Static Files Mount ---
 
-app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Dynamically scan possible frontend locations
+possible_paths = [
+    os.path.join(BASE_DIR, "..", "..", "frontend"),  # Root /frontend
+    os.path.join(BASE_DIR, "..", "frontend"),        # /backend/frontend
+    os.path.join(BASE_DIR, "frontend"),              # /backend/app/frontend
+    os.path.abspath("frontend"),                     # Current working directory /frontend
+]
+
+frontend_path = next((path for path in possible_paths if os.path.exists(path)), None)
+
+if frontend_path:
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")
