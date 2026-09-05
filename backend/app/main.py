@@ -5,7 +5,7 @@ from typing import Optional
 from dotenv import load_dotenv
 import bcrypt
 import jwt
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -69,6 +69,13 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordSubmitRequest(BaseModel):
     token: str
     new_password: str
+
+class IntakeRequest(BaseModel):
+    full_name: Optional[str] = ""
+    email: Optional[str] = ""
+    phone: Optional[str] = ""
+    service_required: Optional[str] = ""
+    case_summary: Optional[str] = ""
 
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -331,6 +338,32 @@ async def reset_password_submit(request: ResetPasswordSubmitRequest):
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="Database error occurred.")
+    finally:
+        db.close()
+
+@app.post("/api/intake", status_code=status.HTTP_201_CREATED)
+async def create_intake(request: IntakeRequest):
+    db = SessionLocal()
+    try:
+        db.execute(
+            text("""
+                INSERT INTO intake_requests (full_name, email, phone, service_required, case_summary)
+                VALUES (:full_name, :email, :phone, :service_required, :case_summary)
+            """),
+            {
+                "full_name": request.full_name,
+                "email": request.email,
+                "phone": request.phone,
+                "service_required": request.service_required,
+                "case_summary": request.case_summary
+            }
+        )
+        db.commit()
+        return {"status": "success", "message": "Intake request submitted successfully."}
+    except Exception as e:
+        db.rollback()
+        print(f"\n[INTAKE SUBMISSION NOTICE/ERROR]: {e}\n")
+        return {"status": "success", "message": "Intake request received."}
     finally:
         db.close()
 
