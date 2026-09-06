@@ -38,9 +38,7 @@
         .status-pending { background-color: #fef3c7; color: #d97706; }
         .status-reviewed { background-color: #dcfce7; color: #15803d; }
         
-        .notes-input { width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; }
-        .action-btn { background-color: var(--accent); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
-        .action-btn:hover { background-color: #92400e; }
+        .service-tag { background-color: #e2e8f0; color: #334155; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
         .no-data { text-align: center; padding: 3rem; color: #94a3b8; }
     </style>
 </head>
@@ -72,11 +70,11 @@
         <table>
             <thead>
                 <tr>
-                    <th>Client Name</th>
-                    <th>Brief Case Summary</th>
+                    <th>Client Details</th>
+                    <th>Service Required</th>
+                    <th>Case Summary</th>
+                    <th>Date Submitted</th>
                     <th>Status</th>
-                    <th>Internal Review Notes</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="intake-rows"></tbody>
@@ -90,14 +88,14 @@
             window.location.href = 'login.html';
         }
 
-        const API_URL = "http://127.0.0.1:8000/api/intakes";
+        // Relative path works seamlessly both locally and when deployed on Render
+        const API_URL = "/api/admin/intakes";
 
         async function fetchIntakes() {
             const rowContainer = document.getElementById("intake-rows");
             const loadingState = document.getElementById("loading-state");
             
             try {
-                // Fetch request built with the dynamic Authorization payload header
                 const response = await fetch(API_URL, {
                     method: 'GET',
                     headers: {
@@ -105,19 +103,24 @@
                     }
                 });
                 
-                // Kick to login if token is expired or unauthorized
                 if (response.status === 401) {
                     localStorage.removeItem('adminToken');
                     window.location.href = 'login.html';
                     return;
                 }
 
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+
                 const data = await response.json();
                 rowContainer.innerHTML = "";
                 
-                if (data.length === 0) {
+                if (!data || data.length === 0) {
                     loadingState.style.display = "block";
-                    loadingState.innerText = "No cases found in the pipeline database.";
+                    loadingState.innerText = "No intake submissions found in the database.";
+                    document.getElementById("stat-total").innerText = "0";
+                    document.getElementById("stat-pending").innerText = "0";
                     return;
                 }
                 
@@ -125,24 +128,28 @@
                 let pendingCount = 0;
 
                 data.forEach(item => {
-                    if (item.status === "pending") pendingCount++;
+                    const status = item.status || "pending";
+                    if (status === "pending") pendingCount++;
                     
-                    const isPending = item.status === "pending";
+                    const isPending = status === "pending";
                     const badgeClass = isPending ? "status-pending" : "status-reviewed";
+
+                    // Format database timestamp
+                    const formattedDate = item.created_at 
+                        ? new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : 'N/A';
 
                     const rowHTML = `
                         <tr>
-                            <td><strong>${item.full_name}</strong><br><small style="color:#64748b">${item.email}</small></td>
-                            <td>${item.brief_summary || ''}</td>
-                            <td><span class="status-badge ${badgeClass}">${item.status}</span></td>
                             <td>
-                                <input type="text" id="notes-${item.id}" class="notes-input" 
-                                       value="${item.review_notes || ''}" 
-                                       ${!isPending ? 'disabled' : 'placeholder="Add case analysis..."'}>
+                                <strong>${item.full_name || 'Anonymous'}</strong><br>
+                                <small style="color:#64748b">${item.email || 'No email'}</small><br>
+                                <small style="color:#0f172a">${item.phone || 'No phone'}</small>
                             </td>
-                            <td>
-                                ${isPending ? `<button class="action-btn" onclick="saveReview('${item.id}')">Resolve Case</button>` : '<span style="color:#94a3b8">Archived</span>'}
-                            </td>
+                            <td><span class="service-tag">${item.service_required || 'General Legal'}</span></td>
+                            <td style="max-width: 300px; word-wrap: break-word;">${item.case_summary || 'No summary provided.'}</td>
+                            <td><small style="color:#64748b">${formattedDate}</small></td>
+                            <td><span class="status-badge ${badgeClass}">${status}</span></td>
                         </tr>
                     `;
                     rowContainer.insertAdjacentHTML("beforeend", rowHTML);
@@ -152,38 +159,8 @@
                 document.getElementById("stat-pending").innerText = pendingCount;
 
             } catch (error) {
+                loadingState.style.display = "block";
                 loadingState.innerText = "Error connecting to backend services.";
-            }
-        }
-
-        async function saveReview(id) {
-            const notesValue = document.getElementById(`notes-${id}`).value;
-            
-            try {
-                // Patch request built with the dynamic Authorization payload header
-                const response = await fetch(`${API_URL}/${id}`, {
-                    method: 'PATCH',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-                    },
-                    body: JSON.stringify({
-                        status: "reviewed",
-                        review_notes: notesValue
-                    })
-                });
-                
-                if (response.status === 401) {
-                    localStorage.removeItem('adminToken');
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                if (response.ok) {
-                    fetchIntakes(); 
-                }
-            } catch (error) {
-                alert("Failed to update case state.");
             }
         }
 
@@ -192,7 +169,6 @@
             window.location.href = 'login.html';
         }
 
-        // Run data generation hook when page window initializes
         window.onload = fetchIntakes;
     </script>
 </body>
