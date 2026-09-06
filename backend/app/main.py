@@ -272,14 +272,24 @@ async def create_intake(request: IntakeRequest):
 async def get_user_profile(current_user: dict = Depends(get_current_user)):
     return {"message": "Authenticated access granted", "user": current_user}
 
+@app.get("/api/admin/intakes")
+async def get_all_intakes():
+    db = SessionLocal()
+    try:
+        result = db.execute(
+            text("SELECT id, full_name, email, phone, service_required, case_summary, created_at FROM intake_requests ORDER BY id DESC")
+        ).mappings().all()
+        return [dict(row) for row in result]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
+    finally:
+        db.close()
 
-# --- Static Files Mount ---
 
 # --- Static Files Mount ---
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Dynamically scan possible frontend locations
 possible_paths = [
     os.path.join(BASE_DIR, "..", "..", "frontend"),  # Root /frontend
     os.path.join(BASE_DIR, "..", "frontend"),        # /backend/frontend
