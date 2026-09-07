@@ -68,7 +68,7 @@ RESET_TOKENS = {}
 
 async def send_email_background(message: MessageSchema):
     """Executes the mail dispatch and forces stdout logging for success/failure on Render."""
-    recipients_str = ", ".join(message.recipients) if message.recipients else "Unknown"
+    recipients_str = ", ".join(str(r) for r in message.recipients) if message.recipients else "Unknown"
     logger.info(f"--- [EMAIL ATTEMPT] Dispatching message to: {recipients_str} ---")
     try:
         await fastmail.send_message(message)
