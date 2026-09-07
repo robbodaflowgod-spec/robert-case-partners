@@ -148,7 +148,7 @@ async def register(request: RegisterRequest):
             
         new_id = str(new_user[0])
         db.commit()
-        access_token = create_access_token(data={"sub": request.email, "user_id": new_id})
+        access_token = create_access_token(data={"sub": request.email, "user_id": new_id, "role": request.role or "client"})
         
         return {
             "access_token": access_token,
@@ -166,23 +166,31 @@ async def register(request: RegisterRequest):
         db.close()
 
 @app.post("/api/login")
-async def login(request: LoginRequest):
+async def login(credentials: LoginRequest):
     db = SessionLocal()
     try:
         user = db.execute(
-            text("SELECT id, email, password_hash FROM users WHERE email = :email"),
-            {"email": request.email}
+            text("SELECT id, email, password_hash, role FROM users WHERE email = :email"),
+            {"email": credentials.email}
         ).fetchone()
 
-        if not user or not bcrypt.checkpw(request.password.encode('utf-8'), user.password_hash.encode('utf-8')):
-            raise HTTPException(status_code=401, detail="Invalid email or password.")
+        if not user:
+            raise HTTPException(status_code=400, detail="Invalid email or password.")
 
-        access_token = create_access_token(data={"sub": user.email, "user_id": str(user.id)})
+        user_id, email, password_hash, role = user.id, user.email, user.password_hash, (user.role or "client")
+
+        # Verify password using bcrypt
+        if not bcrypt.checkpw(credentials.password.encode('utf-8'), password_hash.encode('utf-8')):
+            raise HTTPException(status_code=400, detail="Invalid email or password.")
+
+        is_admin = role in ["admin", "partner"]
+        access_token = create_access_token(data={"sub": email, "user_id": str(user_id), "role": role})
+
         return {
             "access_token": access_token,
             "token_type": "bearer",
-            "user_id": str(user.id),
-            "email": user.email
+            "role": role,
+            "is_admin": is_admin
         }
     finally:
         db.close()
