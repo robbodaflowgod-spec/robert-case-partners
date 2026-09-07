@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 from dotenv import load_dotenv
@@ -14,6 +15,10 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+
+# --- Logging Setup for Render ---
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("uvicorn.error")
 
 load_dotenv()
 
@@ -46,7 +51,7 @@ app.add_middleware(
 # SMTP FastMail configuration
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME", "robertsonroberts58@gmail.com"),
-    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD", ""),  # type: ignore
+    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD", ""),  # Must be a 16-character Gmail App Password
     MAIL_FROM=os.getenv("MAIL_FROM", "robertsonroberts58@gmail.com"),
     MAIL_PORT=587,
     MAIL_SERVER="smtp.gmail.com",
@@ -57,6 +62,22 @@ conf = ConnectionConfig(
 
 fastmail = FastMail(conf)
 RESET_TOKENS = {}
+
+
+# --- Background Task Email Wrapper with Error Logging ---
+
+async def send_email_background(message: MessageSchema):
+    """Executes the mail dispatch and forces stdout logging for success/failure on Render."""
+    recipients_str = ", ".join(message.recipients) if message.recipients else "Unknown"
+    logger.info(f"--- [EMAIL ATTEMPT] Dispatching message to: {recipients_str} ---")
+    try:
+        await fastmail.send_message(message)
+        logger.info(f"--- [EMAIL SUCCESS] Delivered successfully to: {recipients_str} ---")
+    except Exception as e:
+        logger.error(
+            f"--- [EMAIL ERROR] Failed to send email to {recipients_str}. Error details: {str(e)} ---", 
+            exc_info=True
+        )
 
 
 # --- Pydantic Schemas ---
@@ -223,11 +244,11 @@ async def forgot_password(request: ForgotPasswordRequest, background_tasks: Back
             html_content = f"<html><body><p>Reset password: <a href='{reset_url}'>Click here</a></p></body></html>"
             message = MessageSchema(
                 subject="Password Reset - Robert Case & Partners",
-                recipients=[request.email],  # type: ignore
+                recipients=[request.email],
                 body=html_content,
                 subtype=MessageType.html
             )
-            background_tasks.add_task(fastmail.send_message, message)
+            background_tasks.add_task(send_email_background, message)
             
         return {"message": "If the account exists, a link has been sent to your email."}
     finally:
@@ -265,7 +286,6 @@ async def reset_password_submit(request: ResetPasswordSubmitRequest):
 async def create_intake(request: IntakeRequest):
     db = SessionLocal()
     try:
-        # Check dynamically if status column exists in database schema
         db.execute(
             text("""
                 INSERT INTO intake_requests (full_name, email, phone, service_required, case_summary)
@@ -295,7 +315,6 @@ async def get_user_profile(current_user: dict = Depends(get_current_user)):
 async def get_all_intakes(current_user: dict = Depends(get_current_admin_user)):
     db = SessionLocal()
     try:
-        # Safe query fallback in case status column hasn't been migrated yet
         result = db.execute(
             text("""
                 SELECT 
@@ -332,11 +351,9 @@ async def review_intake(
 ):
     db = SessionLocal()
     try:
-        # Ensure status column exists before updating
         db.execute(text("ALTER TABLE intake_requests ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'pending'"))
         db.commit()
 
-        # Update intake status in PostgreSQL database
         result = db.execute(
             text("""
                 UPDATE intake_requests 
@@ -355,7 +372,6 @@ async def review_intake(
 
         client_id, full_name, client_email, service_required = result.id, result.full_name, result.email, result.service_required
 
-        # Queue automated email notification if client email exists
         if client_email:
             meetup_info = f"Proposed Physical Meetup Date/Time: <strong>{request.meetup_date}</strong>" if request.meetup_date else "We will contact you directly to finalize a physical consultation schedule."
             
@@ -383,11 +399,13 @@ async def review_intake(
                 body=email_html,
                 subtype=MessageType.html
             )
-            background_tasks.add_task(fastmail.send_message, message)
+            background_tasks.add_task(send_email_background, message)
+        else:
+            logger.warning(f"[REVIEW] Intake ID #{intake_id} has no email associated. Skipping notification.")
 
         return {
             "status": "success",
-            "message": "Intake request marked as reviewed and client notified via email.",
+            "message": "Intake request marked as reviewed and client email queued.",
             "intake_id": str(client_id)
         }
     except HTTPException:
