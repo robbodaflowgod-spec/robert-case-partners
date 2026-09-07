@@ -83,29 +83,51 @@
     </div>
 
     <script>
-        // Security Gate: Instant rejection if no token exists in local browser memory
-        if (!localStorage.getItem('adminToken')) {
+        // Retrieve auth token across all possible storage keys
+        function getToken() {
+            return localStorage.getItem('adminToken') || localStorage.getItem('access_token') || localStorage.getItem('userToken');
+        }
+
+        // Complete session cleanup to prevent redirect loops back to login.html
+        function clearAuthAndRedirect() {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('userToken');
+            localStorage.removeItem('role');
+            localStorage.removeItem('is_admin');
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('user_email');
             window.location.href = 'login.html';
         }
 
-        // Relative path works seamlessly both locally and when deployed on Render
+        // Security Gate: Check for valid token on load
+        const currentToken = getToken();
+        if (!currentToken) {
+            clearAuthAndRedirect();
+        }
+
         const API_URL = "/api/admin/intakes";
 
         async function fetchIntakes() {
             const rowContainer = document.getElementById("intake-rows");
             const loadingState = document.getElementById("loading-state");
+            const activeToken = getToken();
+
+            if (!activeToken) {
+                clearAuthAndRedirect();
+                return;
+            }
             
             try {
                 const response = await fetch(API_URL, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                        'Authorization': `Bearer ${activeToken}`
                     }
                 });
                 
-                if (response.status === 401) {
-                    localStorage.removeItem('adminToken');
-                    window.location.href = 'login.html';
+                if (response.status === 401 || response.status === 403) {
+                    clearAuthAndRedirect();
                     return;
                 }
 
@@ -134,7 +156,6 @@
                     const isPending = status === "pending";
                     const badgeClass = isPending ? "status-pending" : "status-reviewed";
 
-                    // Format database timestamp
                     const formattedDate = item.created_at 
                         ? new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
                         : 'N/A';
@@ -165,8 +186,7 @@
         }
 
         function logout() {
-            localStorage.removeItem('adminToken');
-            window.location.href = 'login.html';
+            clearAuthAndRedirect();
         }
 
         window.onload = fetchIntakes;

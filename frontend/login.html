@@ -106,8 +106,10 @@
     </div>
 
     <script>
-        // Check session state on load
-        if (localStorage.getItem('access_token')) {
+        // Check session state on load across all potential token keys
+        const existingToken = localStorage.getItem('access_token') || localStorage.getItem('adminToken') || localStorage.getItem('userToken');
+        
+        if (existingToken) {
             const isAdmin = localStorage.getItem('is_admin') === 'true';
             const role = localStorage.getItem('role');
             if (isAdmin || role === 'admin' || role === 'partner') {
@@ -139,12 +141,20 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    // Populate token keys used across different frontend pages
                     localStorage.setItem('access_token', data.access_token);
-                    localStorage.setItem('token_type', data.token_type);
+                    localStorage.setItem('adminToken', data.access_token);
+                    localStorage.setItem('userToken', data.access_token);
+                    
+                    // Metadata storage
+                    localStorage.setItem('token_type', data.token_type || 'bearer');
                     localStorage.setItem('role', data.role || 'client');
-                    localStorage.setItem('is_admin', data.is_admin || false);
+                    localStorage.setItem('is_admin', (data.is_admin || data.role === 'admin' || data.role === 'partner') ? 'true' : 'false');
+                    
+                    if (data.user_id) localStorage.setItem('user_id', data.user_id);
+                    if (data.email) localStorage.setItem('user_email', data.email);
 
-                    // Conditional routing based on role / admin flag
+                    // Route based on role
                     if (data.is_admin || data.role === 'admin' || data.role === 'partner') {
                         window.location.href = '/admin.html';
                     } else {
