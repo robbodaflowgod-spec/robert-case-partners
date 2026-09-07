@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, SecretStr
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
@@ -51,7 +51,7 @@ app.add_middleware(
 # SMTP FastMail configuration
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME", "robertsonroberts58@gmail.com"),
-    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD", ""),  # Must be a 16-character Gmail App Password
+    MAIL_PASSWORD=SecretStr(os.getenv("MAIL_PASSWORD", "")),  # Must be a 16-character Gmail App Password
     MAIL_FROM=os.getenv("MAIL_FROM", "robertsonroberts58@gmail.com"),
     MAIL_PORT=587,
     MAIL_SERVER="smtp.gmail.com",
