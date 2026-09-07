@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Portal - Robert Case & Partners</title>
+
+    <!-- Immediate Client-Side Security Guard (Executes before DOM renders) -->
+    <script>
+        (function () {
+            const token = localStorage.getItem('adminToken') || localStorage.getItem('access_token') || localStorage.getItem('userToken');
+            if (!token) {
+                window.location.replace('login.html');
+            }
+        })();
+    </script>
+
     <style>
         :root {
             --primary: #0f172a;
@@ -126,11 +137,7 @@
             localStorage.removeItem('userToken');
             localStorage.removeItem('role');
             localStorage.removeItem('is_admin');
-            window.location.href = 'login.html';
-        }
-
-        if (!getToken()) {
-            clearAuthAndRedirect();
+            window.location.replace('login.html');
         }
 
         const API_URL = "/api/admin/intakes";
