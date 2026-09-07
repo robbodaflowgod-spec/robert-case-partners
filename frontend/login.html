@@ -106,8 +106,15 @@
     </div>
 
     <script>
+        // Check session state on load
         if (localStorage.getItem('access_token')) {
-            window.location.href = '/dashboard.html';
+            const isAdmin = localStorage.getItem('is_admin') === 'true';
+            const role = localStorage.getItem('role');
+            if (isAdmin || role === 'admin' || role === 'partner') {
+                window.location.href = '/admin.html';
+            } else {
+                window.location.href = '/dashboard.html';
+            }
         }
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -134,10 +141,15 @@
                 if (response.ok) {
                     localStorage.setItem('access_token', data.access_token);
                     localStorage.setItem('token_type', data.token_type);
-                    localStorage.setItem('user_id', data.user_id);
-                    localStorage.setItem('user_email', data.email);
+                    localStorage.setItem('role', data.role || 'client');
+                    localStorage.setItem('is_admin', data.is_admin || false);
 
-                    window.location.href = '/dashboard.html';
+                    // Conditional routing based on role / admin flag
+                    if (data.is_admin || data.role === 'admin' || data.role === 'partner') {
+                        window.location.href = '/admin.html';
+                    } else {
+                        window.location.href = '/dashboard.html';
+                    }
                 } else {
                     errorDiv.innerText = data.detail || 'Login failed. Please check your credentials.';
                     submitBtn.disabled = false;
