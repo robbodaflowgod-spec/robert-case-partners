@@ -86,6 +86,10 @@ class IntakeRequest(BaseModel):
     service_required: Optional[str] = ""
     case_summary: Optional[str] = ""
 
+class ReviewIntakeRequest(BaseModel):
+    status: Optional[str] = "reviewed"
+    meetup_date: Optional[str] = None
+
 
 # --- Authentication Helpers ---
 
@@ -101,13 +105,20 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("user_id")
         email = payload.get("sub")
+        role = payload.get("role", "client")
         if user_id is None or email is None:
             raise HTTPException(status_code=401, detail="Invalid authentication token payload.")
-        return {"user_id": str(user_id), "email": str(email)}
+        return {"user_id": str(user_id), "email": str(email), "role": str(role)}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired. Please log in again.")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Could not validate credentials.")
+
+def get_current_admin_user(current_user: dict = Depends(get_current_user)):
+    role = current_user.get("role", "client")
+    if role not in ["admin", "partner"]:
+        raise HTTPException(status_code=403, detail="Access denied. Administrative privileges required.")
+    return current_user
 
 
 # --- API Routes ---
@@ -179,7 +190,6 @@ async def login(credentials: LoginRequest):
 
         user_id, email, password_hash, role = user.id, user.email, user.password_hash, (user.role or "client")
 
-        # Verify password using bcrypt
         if not bcrypt.checkpw(credentials.password.encode('utf-8'), password_hash.encode('utf-8')):
             raise HTTPException(status_code=400, detail="Invalid email or password.")
 
@@ -257,8 +267,8 @@ async def create_intake(request: IntakeRequest):
     try:
         db.execute(
             text("""
-                INSERT INTO intake_requests (full_name, email, phone, service_required, case_summary)
-                VALUES (:full_name, :email, :phone, :service_required, :case_summary)
+                INSERT INTO intake_requests (full_name, email, phone, service_required, case_summary, status)
+                VALUES (:full_name, :email, :phone, :service_required, :case_summary, 'pending')
             """),
             {
                 "full_name": request.full_name,
@@ -281,15 +291,92 @@ async def get_user_profile(current_user: dict = Depends(get_current_user)):
     return {"message": "Authenticated access granted", "user": current_user}
 
 @app.get("/api/admin/intakes")
-async def get_all_intakes():
+async def get_all_intakes(current_user: dict = Depends(get_current_admin_user)):
     db = SessionLocal()
     try:
         result = db.execute(
-            text("SELECT id, full_name, email, phone, service_required, case_summary, created_at FROM intake_requests ORDER BY id DESC")
+            text("""
+                SELECT id, full_name, email, phone, service_required, case_summary, 
+                       COALESCE(status, 'pending') AS status, created_at 
+                FROM intake_requests 
+                ORDER BY id DESC
+            """)
         ).mappings().all()
         return [dict(row) for row in result]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
+    finally:
+        db.close()
+
+@app.patch("/api/admin/intakes/{intake_id}/review")
+async def review_intake(
+    intake_id: str,
+    request: ReviewIntakeRequest,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_admin_user)
+):
+    db = SessionLocal()
+    try:
+        # Update intake status in PostgreSQL database
+        result = db.execute(
+            text("""
+                UPDATE intake_requests 
+                SET status = :status 
+                WHERE id::text = :id 
+                RETURNING id, full_name, email, service_required
+            """),
+            {"status": request.status or "reviewed", "id": intake_id}
+        ).fetchone()
+
+        if not result:
+            db.rollback()
+            raise HTTPException(status_code=404, detail="Intake request record not found.")
+
+        db.commit()
+
+        client_id, full_name, client_email, service_required = result.id, result.full_name, result.email, result.service_required
+
+        # Queue automated email notification if client email exists
+        if client_email:
+            meetup_info = f"Proposed Physical Meetup Date/Time: <strong>{request.meetup_date}</strong>" if request.meetup_date else "We will contact you directly to finalize a physical consultation schedule."
+            
+            email_html = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                    <h2 style="color: #0f172a;">Consultation Request Reviewed</h2>
+                    <p>Dear <strong>{full_name or 'Client'}</strong>,</p>
+                    <p>Your legal consultation request regarding <strong>{service_required or 'General Legal Consultation'}</strong> has been officially reviewed by our legal team at <strong>Robert Case & Partners Advocates</strong>.</p>
+                    <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid #b45309; margin: 20px 0;">
+                        <p style="margin: 0; font-weight: bold; color: #0f172a;">Next Steps:</p>
+                        <p style="margin: 5px 0 0 0;">{meetup_info}</p>
+                    </div>
+                    <p>Please reply directly to this email or call our chambers to confirm or adjust your availability.</p>
+                    <br>
+                    <p>Kind regards,</p>
+                    <p><strong>Robert Case & Partners Advocates</strong></p>
+                </body>
+            </html>
+            """
+
+            message = MessageSchema(
+                subject="Consultation Request Reviewed - Robert Case & Partners",
+                recipients=[client_email],
+                body=email_html,
+                subtype=MessageType.html
+            )
+            background_tasks.add_task(fastmail.send_message, message)
+
+        return {
+            "status": "success",
+            "message": "Intake request marked as reviewed and client notified via email.",
+            "intake_id": str(client_id)
+        }
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update intake request: {str(e)}")
     finally:
         db.close()
 

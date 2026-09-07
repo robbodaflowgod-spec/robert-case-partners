@@ -23,6 +23,7 @@
         .logout-btn:hover { background-color: #475569; }
         .refresh-btn { background-color: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600; }
         .refresh-btn:hover { background-color: #1e293b; }
+        .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
         .stat-card { background: var(--card-bg); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
@@ -40,6 +41,21 @@
         
         .service-tag { background-color: #e2e8f0; color: #334155; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
         .no-data { text-align: center; padding: 3rem; color: #94a3b8; }
+
+        .action-btn { background-color: #c25e00; color: white; border: none; padding: 0.45rem 0.85rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .action-btn:hover { background-color: #a04c00; }
+        .action-btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        .done-text { color: #15803d; font-weight: 600; font-size: 0.85rem; }
+
+        /* Modal styling */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: #fff; padding: 1.5rem; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .modal h3 { margin-bottom: 1rem; color: var(--primary); }
+        .modal label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 0.5rem; color: #475569; }
+        .modal input { width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1.25rem; font-size: 0.9rem; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+        .btn-cancel { background: #e2e8f0; color: #334155; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        .btn-confirm { background: #c25e00; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -51,7 +67,7 @@
         </div>
         <div>
             <button class="logout-btn" onclick="logout()">Logout</button>
-            <button class="refresh-btn" onclick="fetchIntakes()">Refresh Data</button>
+            <button class="refresh-btn" id="refresh-btn" onclick="fetchIntakes()">Refresh Data</button>
         </div>
     </header>
 
@@ -75,6 +91,7 @@
                     <th>Case Summary</th>
                     <th>Date Submitted</th>
                     <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody id="intake-rows"></tbody>
@@ -82,27 +99,37 @@
         <div id="loading-state" class="no-data">Loading application entries...</div>
     </div>
 
+    <!-- Review & Invite Modal -->
+    <div class="modal-overlay" id="review-modal">
+        <div class="modal">
+            <h3>Review Consultation</h3>
+            <p id="modal-client-info" style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;"></p>
+            <label for="meetup-date">Proposed Physical Meetup Date & Time</label>
+            <input type="datetime-local" id="meetup-date">
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-confirm" id="modal-submit-btn" onclick="submitReview()">Mark Reviewed & Email Client</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Retrieve auth token across all possible storage keys
+        let selectedIntakeId = null;
+
         function getToken() {
             return localStorage.getItem('adminToken') || localStorage.getItem('access_token') || localStorage.getItem('userToken');
         }
 
-        // Complete session cleanup to prevent redirect loops back to login.html
         function clearAuthAndRedirect() {
             localStorage.removeItem('adminToken');
             localStorage.removeItem('access_token');
             localStorage.removeItem('userToken');
             localStorage.removeItem('role');
             localStorage.removeItem('is_admin');
-            localStorage.removeItem('user_id');
-            localStorage.removeItem('user_email');
             window.location.href = 'login.html';
         }
 
-        // Security Gate: Check for valid token on load
-        const currentToken = getToken();
-        if (!currentToken) {
+        if (!getToken()) {
             clearAuthAndRedirect();
         }
 
@@ -111,19 +138,21 @@
         async function fetchIntakes() {
             const rowContainer = document.getElementById("intake-rows");
             const loadingState = document.getElementById("loading-state");
+            const refreshBtn = document.getElementById("refresh-btn");
             const activeToken = getToken();
 
             if (!activeToken) {
                 clearAuthAndRedirect();
                 return;
             }
+
+            refreshBtn.disabled = true;
+            refreshBtn.innerText = "Refreshing...";
             
             try {
                 const response = await fetch(API_URL, {
                     method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${activeToken}`
-                    }
+                    headers: { 'Authorization': `Bearer ${activeToken}` }
                 });
                 
                 if (response.status === 401 || response.status === 403) {
@@ -131,9 +160,7 @@
                     return;
                 }
 
-                if (!response.ok) {
-                    throw new Error(`Server returned ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`Server returned ${response.status}`);
 
                 const data = await response.json();
                 rowContainer.innerHTML = "";
@@ -160,6 +187,10 @@
                         ? new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
                         : 'N/A';
 
+                    const actionHTML = isPending
+                        ? `<button class="action-btn" onclick="openReviewModal('${item.id}', '${escapeQuotes(item.full_name)}')">Review & Notify</button>`
+                        : `<span class="done-text">✓ Email Sent</span>`;
+
                     const rowHTML = `
                         <tr>
                             <td>
@@ -168,9 +199,10 @@
                                 <small style="color:#0f172a">${item.phone || 'No phone'}</small>
                             </td>
                             <td><span class="service-tag">${item.service_required || 'General Legal'}</span></td>
-                            <td style="max-width: 300px; word-wrap: break-word;">${item.case_summary || 'No summary provided.'}</td>
+                            <td style="max-width: 250px; word-wrap: break-word;">${item.case_summary || 'No summary provided.'}</td>
                             <td><small style="color:#64748b">${formattedDate}</small></td>
                             <td><span class="status-badge ${badgeClass}">${status}</span></td>
+                            <td>${actionHTML}</td>
                         </tr>
                     `;
                     rowContainer.insertAdjacentHTML("beforeend", rowHTML);
@@ -182,6 +214,63 @@
             } catch (error) {
                 loadingState.style.display = "block";
                 loadingState.innerText = "Error connecting to backend services.";
+            } finally {
+                refreshBtn.disabled = false;
+                refreshBtn.innerText = "Refresh Data";
+            }
+        }
+
+        function escapeQuotes(str) {
+            return (str || '').replace(/'/g, "\\'");
+        }
+
+        function openReviewModal(id, clientName) {
+            selectedIntakeId = id;
+            document.getElementById("modal-client-info").innerText = `Client: ${clientName}`;
+            document.getElementById("meetup-date").value = "";
+            document.getElementById("review-modal").style.display = "flex";
+        }
+
+        function closeModal() {
+            selectedIntakeId = null;
+            document.getElementById("review-modal").style.display = "none";
+        }
+
+        async function submitReview() {
+            if (!selectedIntakeId) return;
+
+            const meetupDate = document.getElementById("meetup-date").value;
+            const submitBtn = document.getElementById("modal-submit-btn");
+            const activeToken = getToken();
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Updating & Sending Email...";
+
+            try {
+                const response = await fetch(`/api/admin/intakes/${selectedIntakeId}/review`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${activeToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: 'reviewed',
+                        meetup_date: meetupDate || null
+                    })
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    await fetchIntakes();
+                } else {
+                    const err = await response.json();
+                    alert(err.detail || "Failed to update review status.");
+                }
+            } catch (error) {
+                alert("Network error updating intake request.");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Mark Reviewed & Email Client";
             }
         }
 
