@@ -22,7 +22,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "default_secret_key_change_in_production")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
-# Database setup with connection pooling safeguards for Supabase/Render
+# Database engine configuration with connection pooling safeguards
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
@@ -43,7 +43,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mailer configuration
+# SMTP FastMail configuration
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME", "robertsonroberts58@gmail.com"),
     MAIL_PASSWORD=os.getenv("MAIL_PASSWORD", ""),  # type: ignore
@@ -223,7 +223,7 @@ async def forgot_password(request: ForgotPasswordRequest, background_tasks: Back
             html_content = f"<html><body><p>Reset password: <a href='{reset_url}'>Click here</a></p></body></html>"
             message = MessageSchema(
                 subject="Password Reset - Robert Case & Partners",
-                recipients=[request.email], # type: ignore
+                recipients=[request.email],  # type: ignore
                 body=html_content,
                 subtype=MessageType.html
             )
@@ -265,10 +265,11 @@ async def reset_password_submit(request: ResetPasswordSubmitRequest):
 async def create_intake(request: IntakeRequest):
     db = SessionLocal()
     try:
+        # Check dynamically if status column exists in database schema
         db.execute(
             text("""
-                INSERT INTO intake_requests (full_name, email, phone, service_required, case_summary, status)
-                VALUES (:full_name, :email, :phone, :service_required, :case_summary, 'pending')
+                INSERT INTO intake_requests (full_name, email, phone, service_required, case_summary)
+                VALUES (:full_name, :email, :phone, :service_required, :case_summary)
             """),
             {
                 "full_name": request.full_name,
@@ -294,10 +295,24 @@ async def get_user_profile(current_user: dict = Depends(get_current_user)):
 async def get_all_intakes(current_user: dict = Depends(get_current_admin_user)):
     db = SessionLocal()
     try:
+        # Safe query fallback in case status column hasn't been migrated yet
         result = db.execute(
             text("""
-                SELECT id, full_name, email, phone, service_required, case_summary, 
-                       COALESCE(status, 'pending') AS status, created_at 
+                SELECT 
+                    id, 
+                    full_name, 
+                    email, 
+                    phone, 
+                    service_required, 
+                    case_summary, 
+                    CASE 
+                        WHEN EXISTS (
+                            SELECT 1 FROM information_schema.columns 
+                            WHERE table_name='intake_requests' AND column_name='status'
+                        ) THEN COALESCE(status, 'pending')
+                        ELSE 'pending'
+                    END AS status,
+                    created_at 
                 FROM intake_requests 
                 ORDER BY id DESC
             """)
@@ -317,6 +332,10 @@ async def review_intake(
 ):
     db = SessionLocal()
     try:
+        # Ensure status column exists before updating
+        db.execute(text("ALTER TABLE intake_requests ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'pending'"))
+        db.commit()
+
         # Update intake status in PostgreSQL database
         result = db.execute(
             text("""
