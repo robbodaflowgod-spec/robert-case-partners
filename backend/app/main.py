@@ -48,16 +48,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# SMTP FastMail configuration
+# SMTP FastMail configuration switched to Port 465 (SSL/TLS) for Render compatibility
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME", "robertsonroberts58@gmail.com"),
-    MAIL_PASSWORD=SecretStr(os.getenv("MAIL_PASSWORD", "")),  # Must be a 16-character Gmail App Password
+    MAIL_PASSWORD=SecretStr(os.getenv("MAIL_PASSWORD", "")),
     MAIL_FROM=os.getenv("MAIL_FROM", "robertsonroberts58@gmail.com"),
-    MAIL_PORT=587,
+    MAIL_PORT=465,
     MAIL_SERVER="smtp.gmail.com",
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
-    USE_CREDENTIALS=True
+    MAIL_STARTTLS=False,
+    MAIL_SSL_TLS=True,
+    USE_CREDENTIALS=True,
+    TIMEOUT=15
 )
 
 fastmail = FastMail(conf)
@@ -244,7 +245,7 @@ async def forgot_password(request: ForgotPasswordRequest, background_tasks: Back
             html_content = f"<html><body><p>Reset password: <a href='{reset_url}'>Click here</a></p></body></html>"
             message = MessageSchema(
                 subject="Password Reset - Robert Case & Partners",
-                recipients=[request.email],
+                recipients=[str(request.email)],
                 body=html_content,
                 subtype=MessageType.html
             )
@@ -395,7 +396,7 @@ async def review_intake(
 
             message = MessageSchema(
                 subject="Consultation Request Reviewed - Robert Case & Partners",
-                recipients=[client_email],
+                recipients=[str(client_email)],
                 body=email_html,
                 subtype=MessageType.html
             )
