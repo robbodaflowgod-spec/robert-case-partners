@@ -108,7 +108,7 @@
             <a href="#practices">Practice Areas</a>
             <a href="#affiliates">Affiliates & Links</a>
             <a href="#contact">Contact Us</a>
-            <a href="login.html" class="nav-login">Partner Portal</a>
+            <a href="login.html" id="partnerPortalLink" class="nav-login">Partner Portal</a>
             <a href="intake.html" class="nav-cta">Request Consultation</a>
         </div>
     </nav>
@@ -302,5 +302,20 @@
         &copy; 2026 Robert Case and Partners Advocates. All Rights Reserved. | <a href="login.html">Staff Login</a>
     </footer>
 
+    <!-- MANDATORY PARTNER PORTAL AUTH CHECK -->
+    <script>
+        document.getElementById('partnerPortalLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            const token = localStorage.getItem('access_token');
+
+            if (!token) {
+                // Redirect unauthenticated users to login with redirect back to admin portal
+                window.location.href = 'login.html?redirect=admin.html';
+            } else {
+                // Proceed directly to admin dashboard if access token exists
+                window.location.href = 'admin.html';
+            }
+        });
+    </script>
 </body>
 </html>
