@@ -8,3 +8,4 @@ pydantic[email]
 python-dotenv
 fastapi-mail
 gunicorn
+docxtpl
