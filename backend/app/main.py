@@ -67,9 +67,9 @@ async def force_correct_mimetypes(request, call_next):
     response = await call_next(request)
     path = request.url.path
     if path.endswith(".js"):
-        response.headers["content-type"] = "application/javascript"
+        response.headers["content-type"] = "application/javascript; charset=utf-8"
     elif path.endswith(".css"):
-        response.headers["content-type"] = "text/css"
+        response.headers["content-type"] = "text/css; charset=utf-8"
     return response
 
 # SMTP FastMail configuration switched to Port 465 (SSL/TLS) for Render compatibility
@@ -448,9 +448,9 @@ class SafeStaticFiles(StaticFiles):
     def file_response(self, full_path, stat_result, scope, status_code=200):
         response = super().file_response(full_path, stat_result, scope, status_code=status_code)
         if str(full_path).endswith(".js"):
-            response.media_type = "application/javascript"
+            response.headers["content-type"] = "application/javascript; charset=utf-8"
         elif str(full_path).endswith(".css"):
-            response.media_type = "text/css"
+            response.headers["content-type"] = "text/css; charset=utf-8"
         return response
 
 
