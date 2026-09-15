@@ -61,6 +61,17 @@ app.add_middleware(
     expose_headers=["Content-Disposition"],  # Allows browser JS to read dynamic file download names
 )
 
+# --- Global Middleware Backup for MIME Types ---
+@app.middleware("http")
+async def force_correct_mimetypes(request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path.endswith(".js"):
+        response.headers["content-type"] = "application/javascript"
+    elif path.endswith(".css"):
+        response.headers["content-type"] = "text/css"
+    return response
+
 # SMTP FastMail configuration switched to Port 465 (SSL/TLS) for Render compatibility
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME", "robertsonroberts58@gmail.com"),
@@ -380,7 +391,7 @@ async def review_intake(
 
         if not result:
             db.rollback()
-            raise HTTPException(status_status=404, detail="Intake request record not found.")
+            raise HTTPException(status_code=404, detail="Intake request record not found.")
 
         db.commit()
 
@@ -433,8 +444,6 @@ async def review_intake(
 
 
 # --- Custom StaticFiles to Force Correct MIME Types ---
-from starlette.staticfiles import StaticFiles
-
 class SafeStaticFiles(StaticFiles):
     def file_response(self, full_path, stat_result, scope, status_code=200):
         response = super().file_response(full_path, stat_result, scope, status_code=status_code)
