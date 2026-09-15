@@ -2,6 +2,9 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from app.config import settings
+# Inside backend/app/routers/documents.py
+from app.database import SessionLocal
+from app.email_config import conf  # Or wherever your email config is located
 
 # 1. Create the SQLAlchemy Engine
 # Fixed: Changed 'create_backend' to the correct 'create_engine' function
