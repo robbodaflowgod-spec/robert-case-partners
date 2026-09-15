@@ -7,9 +7,11 @@ from fastapi.responses import StreamingResponse
 from fastapi_mail import FastMail, MessageSchema, MessageType
 from pydantic import BaseModel, EmailStr
 from docxtpl import DocxTemplate
-
-from app.main import conf, SessionLocal  # Import FastMail config & DB session from main
 from sqlalchemy import text
+
+# Import cleanly from independent config and database files
+from app.database import SessionLocal
+from app.email_config import conf
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
