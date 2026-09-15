@@ -454,15 +454,15 @@ class SafeStaticFiles(StaticFiles):
         return response
 
 
-# --- Static Files Mount ---
+# --- Static Files Mount for Pure HTML/CSS/JS ---
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 possible_paths = [
-    os.path.join(BASE_DIR, "..", "..", "frontend"),  # Root /frontend
-    os.path.join(BASE_DIR, "..", "frontend"),        # /backend/frontend
-    os.path.join(BASE_DIR, "frontend"),              # /backend/app/frontend
-    os.path.abspath("frontend"),                     # Current working directory /frontend
+    os.path.join(BASE_DIR, "..", "..", "frontend"),  # Root /frontend folder
+    os.path.join(BASE_DIR, "..", "frontend"),
+    os.path.join(BASE_DIR, "frontend"),
+    os.path.abspath("frontend"),
 ]
 
 frontend_path = next((path for path in possible_paths if os.path.exists(path)), None)
