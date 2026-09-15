@@ -432,6 +432,19 @@ async def review_intake(
         db.close()
 
 
+# --- Custom StaticFiles to Force Correct MIME Types ---
+from starlette.staticfiles import StaticFiles
+
+class SafeStaticFiles(StaticFiles):
+    def file_response(self, full_path, stat_result, scope, status_code=200):
+        response = super().file_response(full_path, stat_result, scope, status_code=status_code)
+        if str(full_path).endswith(".js"):
+            response.media_type = "application/javascript"
+        elif str(full_path).endswith(".css"):
+            response.media_type = "text/css"
+        return response
+
+
 # --- Static Files Mount ---
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -446,4 +459,4 @@ possible_paths = [
 frontend_path = next((path for path in possible_paths if os.path.exists(path)), None)
 
 if frontend_path:
-    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")
+    app.mount("/", SafeStaticFiles(directory=frontend_path, html=True), name="static")
