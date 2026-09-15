@@ -2,6 +2,7 @@ import os
 import uuid
 import logging
 import io
+import mimetypes
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 from dotenv import load_dotenv
@@ -18,6 +19,10 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from app.routers.documents import router as documents_router
+
+# --- MIME Type Fix for Cloudflare/Render JavaScript Modules ---
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
 
 # --- Logging Setup for Render ---
 logging.basicConfig(level=logging.INFO)
@@ -375,7 +380,7 @@ async def review_intake(
 
         if not result:
             db.rollback()
-            raise HTTPException(status_code=404, detail="Intake request record not found.")
+            raise HTTPException(status_status=404, detail="Intake request record not found.")
 
         db.commit()
 
