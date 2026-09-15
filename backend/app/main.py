@@ -1,6 +1,7 @@
 import os
 import uuid
 import logging
+import io
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 from dotenv import load_dotenv
@@ -9,12 +10,14 @@ import jwt
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from pydantic import BaseModel, EmailStr, SecretStr
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+
+from app.routers.documents import router as documents_router
 
 # --- Logging Setup for Render ---
 logging.basicConfig(level=logging.INFO)
@@ -38,14 +41,19 @@ SessionLocal = sessionmaker(bind=engine)
 
 app = FastAPI(title="Robert Case & Partners API")
 
+# Register external routers
+app.include_router(documents_router)
+
 security = HTTPBearer()
 
+# --- Updated CORS Middleware ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],  # Allows browser JS to read dynamic file download names
 )
 
 # SMTP FastMail configuration switched to Port 465 (SSL/TLS) for Render compatibility
