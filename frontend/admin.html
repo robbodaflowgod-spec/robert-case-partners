@@ -272,7 +272,7 @@
                     throw new Error(err.detail || "Failed to update review status.");
                 }
 
-               // 2. Automatically trigger the document generation and download stream (Using GET)
+              // Automatically trigger the document generation and download stream via GET
                 const docResponse = await fetch(`/api/documents/generate/${selectedIntakeId}`, {
                     method: 'GET',
                     headers: {
@@ -291,7 +291,7 @@
                     a.remove();
                     window.URL.revokeObjectURL(url);
                 } else {
-                    console.warn("Status updated, but document generation stream failed.");
+                    console.warn("Document generation stream failed.");
                 }
 
                 closeModal();
