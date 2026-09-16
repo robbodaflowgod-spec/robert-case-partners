@@ -3,10 +3,17 @@ import os
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy import text
 from docxtpl import DocxTemplate
 
 from app.database import SessionLocal
+# Import your actual SQLAlchemy intake model (adjust name if it's Intake or IntakeRequest)
+try:
+    from app.models import IntakeModel as Intake
+except ImportError:
+    try:
+        from app.models import Intake
+    except ImportError:
+        Intake = None
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -28,33 +35,57 @@ def generate_retainer_by_id(intake_id: int):
     if not TEMPLATE_PATH:
         raise HTTPException(status_code=500, detail="Template file not found on server.")
 
-    # 1. Fetch the existing intake record from PostgreSQL by ID
     db = SessionLocal()
     try:
-        # Using SQLAlchemy text query matching your sync SessionLocal setup
-        query = text("SELECT id, full_name, email, phone, service_required FROM intake_requests WHERE id = :id")
-        result = db.execute(query, {"id": intake_id}).fetchone()
+        # Use ORM query if model is available, avoiding raw table name mismatches
+        record = None
+        if Intake is not None:
+            record = db.query(Intake).filter(Intake.id == intake_id).first()
         
-        if not result:
-            raise HTTPException(status_code=404, detail="Intake record not found in database.")
-        
-        # Map database row fields to template context tags
-        intake_data = {
-            "full_name": result[1],           # full_name
-            "email": result[2],               # email
-            "phone": result[3],               # phone
-            "service_type": result[4],        # service_required
-            "service_required": result[4],    # support both template key variants
-        }
+        # Fallback to raw SQL checking both common table names if ORM isn't bound
+        if not record:
+            from sqlalchemy import text
+            for table_name in ["intake_requests", "intakes", "intake"]:
+                try:
+                    res = db.execute(
+                        text(f"SELECT id, full_name, email, phone, service_required FROM {table_name} WHERE id = :id"),
+                        {"id": intake_id}
+                    ).fetchone()
+                    if res:
+                        record = res
+                        break
+                except Exception:
+                    continue
+
+        if not record:
+            raise HTTPException(status_code=404, detail=f"Intake record {intake_id} not found in database.")
+
+        # Handle both ORM object attributes and raw SQL tuples/rows safely
+        if hasattr(record, "full_name"):
+            intake_data = {
+                "full_name": record.full_name,
+                "email": record.email,
+                "phone": record.phone,
+                "service_type": getattr(record, "service_required", getattr(record, "service_type", "General Legal")),
+                "service_required": getattr(record, "service_required", "General Legal"),
+            }
+        else:
+            intake_data = {
+                "full_name": record[1],
+                "email": record[2],
+                "phone": record[3],
+                "service_type": record[4] if len(record) > 4 else "General Legal",
+                "service_required": record[4] if len(record) > 4 else "General Legal",
+            }
+
     except HTTPException:
         raise
     except Exception as e:
         print(f"Database query error: {e}")
-        raise HTTPException(status_code=500, detail="Internal database error fetching record.")
+        raise HTTPException(status_code=500, detail=f"Internal database error: {str(e)}")
     finally:
         db.close()
 
-    # 2. Render the Word document template in memory
     try:
         doc = DocxTemplate(str(TEMPLATE_PATH))
         doc.render(intake_data)
@@ -66,7 +97,6 @@ def generate_retainer_by_id(intake_id: int):
     doc.save(buffer)
     buffer.seek(0)
 
-    # 3. Stream the generated .docx file back to the browser for immediate download
     filename = f"Retainer_Agreement_{str(intake_data['full_name']).replace(' ', '_')}.docx"
     return StreamingResponse(
         buffer,
