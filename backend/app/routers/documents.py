@@ -1,21 +1,16 @@
 import io
 import os
 from pathlib import Path
-from typing import Optional
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from fastapi_mail import FastMail, MessageSchema, MessageType
-from pydantic import BaseModel, EmailStr
-from docxtpl import DocxTemplate
 from sqlalchemy import text
+from docxtpl import DocxTemplate
 
-# Import cleanly from independent config and database files
 from app.database import SessionLocal
-from app.email_config import conf
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
-# Locate template file
+# Locate template file safely across directory structures
 CURRENT_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = CURRENT_DIR.parent.parent
 ROOT_DIR = BACKEND_DIR.parent
@@ -28,94 +23,53 @@ POSSIBLE_PATHS = [
 
 TEMPLATE_PATH = next((path for path in POSSIBLE_PATHS if path.exists()), None)
 
-class RetainerPayload(BaseModel):
-    full_name: str
-    email: EmailStr
-    phone: str
-    service_type: str
-
-async def send_advocate_retainer_email(payload: RetainerPayload, doc_buffer: bytes):
-    """Sends the generated retainer as an email attachment to the advocates' inbox."""
-    fastmail = FastMail(conf)
-    
-    filename = f"retainer_{payload.full_name.replace(' ', '_').lower()}.docx"
-    
-    email_html = f"""
-    <html>
-      <body style="font-family: Arial, sans-serif; color: #333;">
-        <h2>New Retainer Request Generated</h2>
-        <p>A new client retainer agreement has been generated via the firm portal.</p>
-        <ul>
-          <li><strong>Client Name:</strong> {payload.full_name}</li>
-          <li><strong>Email:</strong> {payload.email}</li>
-          <li><strong>Phone:</strong> {payload.phone}</li>
-          <li><strong>Service Type:</strong> {payload.service_type}</li>
-        </ul>
-        <p>The generated Word document is attached to this email for advocate review.</p>
-      </body>
-    </html>
-    """
-
-    message = MessageSchema(
-        subject=f"New Retainer Agreement: {payload.full_name}",
-        recipients=["robertsonroberts58@gmail.com"],  # Firm/Advocate email address
-        body=email_html,
-        subtype=MessageType.html,
-        attachments=[{
-            "file": doc_buffer,
-            "filename": filename,
-            "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        }]
-    )
-    
-    try:
-        await fastmail.send_message(message)
-    except Exception as e:
-        print(f"Failed to email advocate copy: {e}")
-
-@router.post("/generate-retainer", response_class=StreamingResponse)
-async def generate_retainer(payload: RetainerPayload, background_tasks: BackgroundTasks):
+@router.get("/generate/{intake_id}", response_class=StreamingResponse)
+def generate_retainer_by_id(intake_id: int):
     if not TEMPLATE_PATH:
-        raise HTTPException(status_code=500, detail="Template file not found.")
+        raise HTTPException(status_code=500, detail="Template file not found on server.")
 
-    # 1. Render the document in memory
-    doc = DocxTemplate(str(TEMPLATE_PATH))
-    doc.render(payload.model_dump())
-
-    buffer = io.BytesIO()
-    doc.save(buffer)
-    doc_bytes = buffer.getvalue()
-    buffer.seek(0)
-
-    # 2. Save intake record to Database (PostgreSQL)
+    # 1. Fetch the existing intake record from PostgreSQL by ID
     db = SessionLocal()
     try:
-        db.execute(
-            text("""
-                INSERT INTO intake_requests (full_name, email, phone, service_required)
-                VALUES (:full_name, :email, :phone, :service_type)
-            """),
-            {
-                "full_name": payload.full_name,
-                "email": payload.email,
-                "phone": payload.phone,
-                "service_type": payload.service_type,
-            }
-        )
-        db.commit()
+        # Using SQLAlchemy text query matching your sync SessionLocal setup
+        query = text("SELECT id, full_name, email, phone, service_required FROM intake_requests WHERE id = :id")
+        result = db.execute(query, {"id": intake_id}).fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Intake record not found in database.")
+        
+        # Map database row fields to template context tags
+        intake_data = {
+            "full_name": result[1],           # full_name
+            "email": result[2],               # email
+            "phone": result[3],               # phone
+            "service_type": result[4],        # service_required
+            "service_required": result[4],    # support both template key variants
+        }
+    except HTTPException:
+        raise
     except Exception as e:
-        db.rollback()
-        print(f"Database save error: {e}")
+        print(f"Database query error: {e}")
+        raise HTTPException(status_code=500, detail="Internal database error fetching record.")
     finally:
         db.close()
 
-    # 3. Queue background email task to notify Advocates' inbox
-    background_tasks.add_task(send_advocate_retainer_email, payload, doc_bytes)
+    # 2. Render the Word document template in memory
+    try:
+        doc = DocxTemplate(str(TEMPLATE_PATH))
+        doc.render(intake_data)
+    except Exception as e:
+        print(f"Template rendering error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to render document template.")
 
-    # 4. Stream response to browser for immediate file download
-    filename = f"retainer_{payload.full_name.replace(' ', '_').lower()}.docx"
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+
+    # 3. Stream the generated .docx file back to the browser for immediate download
+    filename = f"Retainer_Agreement_{str(intake_data['full_name']).replace(' ', '_')}.docx"
     return StreamingResponse(
         buffer,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )# trigger deployment
+    )
