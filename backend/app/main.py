@@ -47,7 +47,7 @@ SessionLocal = sessionmaker(bind=engine)
 app = FastAPI(title="Robert Case & Partners API")
 
 # Register external routers
-app.include_router(documents_router)
+app.include_router(documents_router, prefix="/api")
 
 security = HTTPBearer()
 
