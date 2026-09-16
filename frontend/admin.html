@@ -272,9 +272,9 @@
                     throw new Error(err.detail || "Failed to update review status.");
                 }
 
-                // 2. Automatically trigger the document generation and download stream
+               // 2. Automatically trigger the document generation and download stream (Using GET)
                 const docResponse = await fetch(`/api/documents/generate/${selectedIntakeId}`, {
-                    method: 'POST',
+                    method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${activeToken}`
                     }
