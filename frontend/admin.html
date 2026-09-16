@@ -251,9 +251,10 @@
             const activeToken = getToken();
 
             submitBtn.disabled = true;
-            submitBtn.innerText = "Updating & Sending Email...";
+            submitBtn.innerText = "Processing Review & Retainer...";
 
             try {
+                // 1. Update review status and trigger email notification
                 const response = await fetch(`/api/admin/intakes/${selectedIntakeId}/review`, {
                     method: 'PATCH',
                     headers: {
@@ -266,15 +267,38 @@
                     })
                 });
 
-                if (response.ok) {
-                    closeModal();
-                    await fetchIntakes();
-                } else {
+                if (!response.ok) {
                     const err = await response.json();
-                    alert(err.detail || "Failed to update review status.");
+                    throw new Error(err.detail || "Failed to update review status.");
                 }
+
+                // 2. Automatically trigger the document generation and download stream
+                const docResponse = await fetch(`/api/documents/generate/${selectedIntakeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${activeToken}`
+                    }
+                });
+
+                if (docResponse.ok) {
+                    const blob = await docResponse.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Retainer_Agreement_${selectedIntakeId}.docx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    console.warn("Status updated, but document generation stream failed.");
+                }
+
+                closeModal();
+                await fetchIntakes();
+
             } catch (error) {
-                alert("Network error updating intake request.");
+                alert(error.message || "Network error processing consultation review.");
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = "Mark Reviewed & Email Client";
